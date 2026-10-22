@@ -1,0 +1,1417 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In Falsus 시나리오 뷰어</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-0: #080e15;
+  --bg-1: #121f2d;
+  --frame: #0f1925;
+  --panel: rgba(16, 28, 40, 0.96);
+  --panel-2: #1a2a3a;
+  --rule: rgba(160, 200, 220, 0.14);
+  --rule-strong: rgba(170, 215, 230, 0.34);
+  --text: #e3edf4;
+  --muted: #8ea4b6;
+  --faint: #5d7487;
+  --accent: #bfe8ec;
+  --accent-ink: #0d1b26;
+
+  --c-ni: #ff5f7e;
+  --c-me: #43c3f0;
+  --c-ay: #f26ad4;
+  --c-ir: #3fd8a8;
+  --c-st: #b27ff6;
+  --c-xt: #c8d5df;
+
+  /* time-slot bar colours, sampled from the in-game cards */
+  --slot-A: #ffdcae; --slot-A-ink: #3a2a14;
+  --slot-B: #cfdbf3; --slot-B-ink: #1a2638;
+  --slot-C: #bfe9f6; --slot-C-ink: #0d1b26;
+  --slot-D: #c9eef6; --slot-D-ink: #0d1b26;
+  --slot-E: #d8d2f4; --slot-E-ink: #1f1a33;
+  --slot-F: #6e5b8e; --slot-F-ink: #f1ebff;
+  --slot-G: #1f3946; --slot-G-ink: #e3eef3;
+  --slot-H: #142530; --slot-H-ink: #dbe6ec;
+  --slot-I: #0c171d; --slot-I-ink: #d6e2e8;
+  --year: #ffdcae;
+
+  --gutter: 14px;
+  --header-h: 50px;
+  --label-w: 108px;
+  --font: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", "Hiragino Sans", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --font-num: "Rajdhani", "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(900px 500px at 80% 120%, rgba(110, 190, 220, 0.16), transparent 60%), var(--bg-0);
+  color: var(--text); font-family: var(--font); font-size: 14px; overflow: hidden;
+}
+button, select, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+.app {
+  position: fixed; inset: var(--gutter);
+  background: linear-gradient(180deg, var(--bg-1), var(--frame) 70%);
+  border: 1px solid var(--rule-strong); border-radius: 10px; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.app.app-full { inset: 0; border-radius: 0; border: 0; }
+
+/* ---------- header ---------- */
+header.top {
+  height: var(--header-h); display: flex; align-items: center; gap: 10px; padding: 0 12px;
+  background: linear-gradient(180deg, rgba(22, 36, 50, 0.98), rgba(14, 24, 35, 0.96));
+  border-bottom: 1px solid var(--rule-strong); position: relative; z-index: 6;
+}
+.brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.brand svg { width: 24px; height: 24px; }
+.brand b { font-family: var(--font-num); font-weight: 700; letter-spacing: 0.12em; font-size: 13px; color: var(--accent); }
+.views { display: flex; gap: 2px; background: var(--panel-2); border: 1px solid var(--rule); border-radius: 5px; padding: 2px; }
+.views button { border: 0; background: none; padding: 0 10px; white-space: nowrap; height: 26px; border-radius: 3px; font-size: 12.5px; color: var(--muted); }
+.views button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.seg {
+  display: flex; align-items: center; height: 32px; padding: 0 10px;
+  background: var(--panel-2); border: 1px solid var(--rule);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+.seg .arrow { background: none; border: 0; width: 26px; height: 100%; color: var(--muted); font-size: 16px; }
+.seg .arrow:hover:not(:disabled) { color: var(--accent); }
+.seg .arrow:disabled { opacity: 0.3; cursor: default; }
+.chap-no { font-family: var(--font-num); font-weight: 700; font-size: 17px; color: var(--accent); min-width: 30px; text-align: center; }
+.chap-title { font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.month { display: flex; flex-direction: column; align-items: center; line-height: 1; min-width: 36px; }
+.month small { font-size: 9px; color: var(--muted); }
+.month span { font-family: var(--font-num); font-weight: 700; font-size: 17px; color: var(--accent); }
+.spacer { flex: 1; }
+.tools { display: flex; align-items: center; gap: 8px; }
+.search { position: relative; }
+.search input { width: 170px; height: 30px; padding: 0 8px 0 26px; font-size: 12.5px;
+  background: var(--panel-2); border: 1px solid var(--rule); border-radius: 4px; }
+.search svg { position: absolute; left: 8px; top: 9px; width: 12px; height: 12px; color: var(--muted); }
+.langs { display: flex; gap: 3px; border: 0; margin: 0; padding: 0; }
+.langs legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.langs label { position: relative; }
+.langs input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.langs span {
+  display: grid; place-items: center; height: 28px; min-width: 38px; padding: 0 7px; border-radius: 4px;
+  border: 1px solid var(--rule); background: var(--panel-2); font-size: 12px; color: var(--muted);
+}
+/* checked = outlined; the primary (first checked) language is filled */
+.langs input:checked + span { background: rgba(191, 232, 236, 0.14); color: var(--accent); border-color: rgba(191, 232, 236, 0.55); font-weight: 700; }
+.langs label.primary input:checked + span { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.langs input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.langs input:disabled { cursor: not-allowed; }
+.langs input:disabled + span { opacity: 0.35; text-decoration: line-through; }   /* no text in this language (e.g. Korean without the patch) */
+.btn { height: 30px; padding: 0 10px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--rule); font-size: 12.5px; white-space: nowrap; }
+.btn:hover { border-color: var(--rule-strong); }
+select.btn { padding: 0 6px; }
+select.btn option { background: var(--bg-1); }
+
+.view { position: absolute; top: var(--header-h); left: 0; right: 0; bottom: 0; }
+
+/* ---------- timeline ---------- */
+#viewTimeline { display: flex; }
+.labels { width: var(--label-w); flex-shrink: 0; padding-top: var(--ruler-h); border-right: 1px solid var(--rule);
+  background: rgba(8, 14, 21, 0.55); z-index: 2; overflow: hidden; }
+.label { height: var(--lane-h); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.label.special { height: var(--sp-h); }
+.hex {
+  width: calc(var(--lane-h) * 0.36); height: calc(var(--lane-h) * 0.31); max-width: 50px; max-height: 44px; min-width: 30px; min-height: 26px;
+  display: grid; place-items: center;
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  background: linear-gradient(160deg, var(--lane), color-mix(in srgb, var(--lane) 45%, #000));
+  font-family: var(--font-num); font-weight: 700; font-size: 16px; color: #fff;
+}
+.label .name { font-size: 12px; font-weight: 500; color: var(--lane); }
+.label .count { font-size: 10.5px; color: var(--faint); }
+/* short windows: lanes shrink, so the labels and legend get out of the way */
+.compact .label { flex-direction: row; gap: 6px; }
+.compact .label .count { display: none; }
+.compact .hex { width: 28px; height: 24px; min-width: 0; min-height: 0; font-size: 12px; }
+.compact .label .name { font-size: 11px; }
+
+.scroller { flex: 1; overflow-x: auto; overflow-y: auto; position: relative; overscroll-behavior: contain; }
+.canvas { position: relative; height: 100%; }
+.ruler { position: sticky; top: 0; height: var(--ruler-h); z-index: 3; background: rgba(12, 21, 31, 0.97); border-bottom: 1px solid var(--rule); }
+.ruler .ticks { position: absolute; left: 0; right: 0; bottom: 0; height: 8px;
+  background: repeating-linear-gradient(90deg, var(--rule) 0 1px, transparent 1px calc(var(--col) / 6)); }
+.chlabel { position: absolute; top: 4px; height: 18px; padding: 0 8px; display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; color: var(--accent-ink); background: var(--accent); white-space: nowrap;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+.chlabel b { font-family: var(--font-num); font-size: 13px; }
+.foot { position: relative; height: var(--foot-h); border-top: 1px solid var(--rule); background: rgba(12, 21, 31, 0.6); }
+.foot .ticks { position: absolute; left: 0; right: 0; top: 0; height: 8px;
+  background: repeating-linear-gradient(90deg, var(--rule) 0 1px, transparent 1px calc(var(--col) / 6)); }
+/* day box hangs off the right side of its boundary line, with a small corner bracket */
+.tick { position: absolute; top: 42px; height: 18px; min-width: 20px; padding: 0 5px; margin-left: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-num); font-weight: 600; font-size: 13px; color: #d5e3ea;
+  background: #121f2b; white-space: nowrap; }
+.tick::before { content: ""; position: absolute; left: -3px; top: -2px; width: 5px; height: 5px;
+  border-left: 1px solid rgba(213, 227, 234, 0.7); border-top: 1px solid rgba(213, 227, 234, 0.7); }
+.mlabel { position: absolute; top: 23px; height: 16px; padding: 0 6px; margin-left: 3px; display: flex; align-items: center;
+  font-size: 11px; font-weight: 700; white-space: nowrap; color: var(--accent-ink); background: var(--accent); }
+.mlabel.year { background: var(--year); color: #3a2a14; }
+
+.lane { position: relative; height: var(--lane-h); }
+.lane.special { height: var(--sp-h); }
+.lane .track { position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px;
+  background: color-mix(in srgb, var(--lane) 75%, transparent); }
+.lane .track::after { content: ""; position: absolute; left: 0; right: 0; top: -3px; bottom: -3px; background: color-mix(in srgb, var(--lane) 14%, transparent); }
+.lane.special .track { height: 2px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--lane) 50%, transparent) 0 10px, transparent 10px 18px); }
+.lane.special .track::after { display: none; }
+
+.node {
+  position: absolute; top: 50%; width: var(--node); height: var(--node);
+  margin: calc(var(--node) / -2) 0 0 calc(var(--node) / -2);
+  background: linear-gradient(180deg, #1d2d3c, #121e2a);
+  border: 1px solid color-mix(in srgb, var(--lane) 55%, transparent);
+  padding: 0; text-align: left; color: var(--text); transition: transform 0.12s ease;
+}
+.node::before, .node::after { content: ""; position: absolute; width: 11px; height: 11px; pointer-events: none; border: 2px solid var(--lane); }
+.node::before { left: -4px; top: -4px; border-right: 0; border-bottom: 0; }
+.node::after { right: -4px; bottom: -4px; border-left: 0; border-top: 0; }
+.node:hover { transform: scale(1.06); z-index: 2; }
+.node.current { outline: 2px solid var(--lane); outline-offset: 3px; z-index: 2; }
+.node .mo { position: absolute; left: 7%; top: 3%; font-family: var(--font-num); font-size: calc(var(--node) * 0.14); color: var(--muted); line-height: 1; }
+.node .dy { position: absolute; left: 7%; top: 13%; font-family: var(--font-num); font-weight: 600; font-size: calc(var(--node) * 0.42); line-height: 1; }
+.node.sp .dy { font-size: calc(var(--node) * 0.3); }
+.node .who { position: absolute; left: 7%; right: 6%; top: 47%; font-size: calc(var(--node) * 0.11); color: var(--lane); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.node .sl { position: absolute; left: 4%; right: 4%; bottom: 4%; height: 23%; padding: 0 5%;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: calc(var(--node) * 0.12); font-weight: 700; white-space: nowrap;
+  background: var(--sl-bg); color: var(--sl-ink); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+.sl-A { --sl-bg: var(--slot-A); --sl-ink: var(--slot-A-ink); }
+.sl-B { --sl-bg: var(--slot-B); --sl-ink: var(--slot-B-ink); }
+.sl-C { --sl-bg: var(--slot-C); --sl-ink: var(--slot-C-ink); }
+.sl-D { --sl-bg: var(--slot-D); --sl-ink: var(--slot-D-ink); }
+.sl-E { --sl-bg: var(--slot-E); --sl-ink: var(--slot-E-ink); }
+.sl-F { --sl-bg: var(--slot-F); --sl-ink: var(--slot-F-ink); }
+.sl-G { --sl-bg: var(--slot-G); --sl-ink: var(--slot-G-ink); }
+.sl-H { --sl-bg: var(--slot-H); --sl-ink: var(--slot-H-ink); }
+.sl-I { --sl-bg: var(--slot-I); --sl-ink: var(--slot-I-ink); }
+.slot-chip { display: inline-block; padding: 0 6px; border-radius: 2px; font-size: 0.92em; font-weight: 700; background: var(--sl-bg); color: var(--sl-ink); }
+.node .pn { font-family: var(--font-num); font-weight: 600; opacity: 0.7; }
+.node .flags { position: absolute; right: 5%; top: 4%; display: flex; gap: 2px; }
+.node .flags i { font-style: normal; font-size: calc(var(--node) * 0.1); font-weight: 700; line-height: 1.4;
+  padding: 0 3px; background: color-mix(in srgb, var(--lane) 30%, transparent); color: var(--lane); }
+
+/* month / year / chapter boundaries */
+.vline { position: absolute; top: 0; bottom: 0; width: 0; pointer-events: none; z-index: 0; }
+.vline.day { border-left: 1px solid rgba(200, 225, 235, 0.13); top: 40px; }
+.vline.month { border-left: 1px solid rgba(191, 232, 236, 0.4); top: 22px; }
+.vline.year { border-left: 1px solid color-mix(in srgb, var(--year) 70%, transparent); top: 22px; }
+.vline.chapter { border-left: 1px solid rgba(191, 232, 236, 0.75); }
+
+/* ---------- reader ---------- */
+.scrim { position: absolute; inset: 0; background: rgba(4, 9, 14, 0.5); opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 8; }
+.scrim.open { opacity: 1; pointer-events: auto; }
+.reader {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(700px, 100%);
+  background: #0f1b27; border-left: 1px solid var(--rule-strong);
+  /* fully hidden once closed (it may not slide far enough when the note panel takes the right edge) */
+  transform: translateX(105%); visibility: hidden;
+  transition: transform 0.22s ease, width 0.22s ease, visibility 0s linear 0.22s;
+  z-index: 9; display: flex; flex-direction: column;
+}
+.reader.open { transform: none; visibility: visible; transition: transform 0.22s ease, width 0.22s ease, visibility 0s; }
+.reader.full { width: 100%; border-left: 0; }
+.reader.full .r-body > * { max-width: 860px; margin-left: auto; margin-right: auto; }
+.r-head { padding: 12px 16px 0; border-bottom: 1px solid var(--rule); position: relative; flex-shrink: 0; }
+.r-head::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--lane); }
+.r-top { display: flex; align-items: flex-start; gap: 12px; }
+.r-date { font-family: var(--font-num); line-height: 1; }
+.r-date small { display: block; font-size: 12px; color: var(--muted); }
+.r-date b { font-size: 38px; font-weight: 600; }
+.r-meta { flex: 1; min-width: 0; padding-top: 3px; }
+.r-pov { font-size: 16px; font-weight: 700; color: var(--lane); }
+.r-pov span { font-weight: 400; font-size: 12px; color: var(--muted); }
+.r-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.r-acts { display: flex; gap: 6px; }
+.r-acts button { background: none; border: 1px solid var(--rule); height: 30px; min-width: 30px; padding: 0 8px; border-radius: 4px; font-size: 12px; color: var(--muted); }
+.r-acts button:hover { color: var(--text); border-color: var(--rule-strong); }
+.r-nav { display: flex; gap: 6px; margin-top: 10px; align-items: center; }
+.r-nav button { flex: 1; height: 28px; background: var(--panel-2); border: 1px solid var(--rule); border-radius: 4px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r-nav button:disabled { opacity: 0.35; cursor: default; }
+.r-nav .pos { font-size: 11px; color: var(--muted); white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.r-nav select { height: 28px; padding: 0 6px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--rule); font-size: 12px; color: var(--text); }
+.r-nav select option { background: var(--bg-1); }
+.tabs { display: flex; gap: 2px; margin-top: 10px; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 12px; font-size: 13px; color: var(--muted); }
+.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--lane); font-weight: 700; }
+.r-body { flex: 1; overflow: auto; padding: 14px 18px 60px; overscroll-behavior: contain; }
+.ln { padding: 6px 9px; border-radius: 4px; line-height: 1.7; font-size: 14.5px; scroll-margin-top: 30px; }
+.ln + .ln { margin-top: 2px; }
+.ln .spk { display: block; font-size: 12px; font-weight: 700; color: var(--spk, var(--accent)); }
+.ln.n { color: #c6d3de; }
+.ln.s { background: rgba(255, 255, 255, 0.025); border-left: 2px solid color-mix(in srgb, var(--spk, var(--accent)) 60%, transparent); }
+.ln .sub { display: block; margin-top: 2px; font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+.ln .sub::before, .ln .tx[data-l]::before { content: attr(data-l); font-family: var(--font-num); font-size: 9.5px; font-weight: 700; color: var(--faint); margin-right: 6px; vertical-align: 1px; }
+.ln .id { float: right; font-family: Consolas, monospace; font-size: 10px; color: var(--faint); margin-left: 8px; opacity: 0; }
+.ln:hover .id { opacity: 1; }
+.ln.ml, .ln.mr { display: flex; flex-direction: column; }
+.ln.mr { align-items: flex-end; }
+.ln .bub { max-width: 80%; padding: 7px 11px; border-radius: 11px; background: var(--panel-2); border: 1px solid var(--rule); }
+.ln.mr .bub { background: color-mix(in srgb, var(--spk, var(--accent)) 22%, #142231); }
+.ln.l .tx { display: block; font-family: Consolas, monospace; font-size: 12.5px; background: rgba(0, 0, 0, 0.3); padding: 7px 9px; border: 1px dashed var(--rule-strong); }
+.ln.hit { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+ruby rt { font-size: 0.55em; color: var(--muted); }
+.empty { color: var(--muted); padding: 36px 0; text-align: center; }
+
+/* detail tab */
+.dsec { margin-bottom: 18px; }
+.dsec h3 { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; margin: 0 0 8px; padding-bottom: 5px; border-bottom: 1px solid var(--rule); }
+.dl { display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; font-size: 13px; }
+.dl dt { color: var(--muted); }
+.dl dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.dl code, .mono { font-family: Consolas, monospace; font-size: 12px; }
+.bits { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+.bits th, .bits td { border: 1px solid var(--rule); padding: 4px 6px; text-align: center; }
+.bits th { color: var(--muted); font-weight: 500; background: rgba(255, 255, 255, 0.02); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid color-mix(in srgb, var(--lane) 60%, transparent); background: color-mix(in srgb, var(--lane) 12%, transparent);
+  color: var(--text); border-radius: 4px; padding: 3px 8px; font-size: 12px; }
+.chip b { color: var(--lane); }
+.note { font-size: 11.5px; color: var(--faint); margin-top: 6px; }
+.song { display: flex; gap: 14px; align-items: center; padding: 10px; border: 1px solid var(--rule); background: rgba(255, 255, 255, 0.02); margin-bottom: 10px; }
+.song button { padding: 0; border: 0; background: none; flex-shrink: 0; }
+.song img { width: 112px; height: 112px; display: block; object-fit: cover; border: 1px solid var(--rule-strong); }
+.song .st { font-size: 16px; font-weight: 700; }
+.song .sa { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.song .se { font-size: 12px; margin-top: 8px; }
+.song .se b { color: var(--accent); }
+.lightbox { position: absolute; inset: 0; z-index: 12; background: rgba(4, 9, 14, 0.85); display: grid; place-items: center; cursor: zoom-out; }
+.lightbox img { width: min(512px, 86vw, 80vh); height: auto; aspect-ratio: 1; border: 1px solid var(--rule-strong); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+.lightbox p { margin: 10px 0 0; text-align: center; color: var(--muted); font-size: 13px; }
+
+/* ---- baked-text image scenes (optional) ---- */
+.img-modes { margin-left: auto; display: flex; gap: 12px; }
+.cg-mark { text-align: center; margin: 6px 0; }
+.cg-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; width: 100%; margin: 10px 0; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.cg-row img { height: 44px; width: auto; border: 1px solid var(--rule-strong); opacity: 0.85; }
+.cg-row:hover img { opacity: 1; }
+.cg-row.open img { height: 180px; max-width: 100%; object-fit: contain; opacity: 1; }
+.cg-chip { display: flex; gap: 4px; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.cg-chip img { height: 46px; width: auto; border: 1px solid var(--rule-strong); }
+.cg-names { font-size: 11px; color: var(--muted); }
+.lb-cg { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-height: 96%; max-width: 98%; overflow: auto; }
+/* CGs fill the viewer frame (the window minus its margins), never squeezed: a flex item would otherwise give up
+   width alone when the frame or a scrollbar takes space, and object-fit keeps the drawing's own shape */
+.lb-cg > * { flex: none; }
+.lightbox .lb-cg img { width: auto; max-width: calc(96vw - 2 * var(--gutter) - 16px); max-height: calc(92vh - 2 * var(--gutter)); aspect-ratio: auto; object-fit: contain; border: 1px solid var(--rule-strong); }
+.img-mode { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); padding-bottom: 4px; }
+.img-mode select { height: 24px; padding: 0 4px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--rule); font-size: 11.5px; color: var(--text); }
+.img-mode select option { background: var(--bg-1); }
+.timg { display: block; max-width: 100%; height: auto; background: #000; padding: 6px 10px; border: 1px solid var(--rule); }   /* white lettering on black, picture unchanged */
+.timg.light { background: #f3f1f4; }
+.img-btn { display: inline-block; margin-top: 4px; padding: 1px 7px; font-size: 11px; color: var(--accent); background: rgba(191, 232, 236, 0.08);
+  border: 1px solid rgba(191, 232, 236, 0.3); border-radius: 10px; }
+.img-btn:hover { background: rgba(191, 232, 236, 0.16); }
+.img-inline { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.img-inline button, .scene-pic, .scene-thumb, .chip-img { padding: 0; border: 0; background: none; cursor: zoom-in; }
+.img-inline .timg { max-height: 60px; width: auto; }
+.scene { margin: 14px 0; }
+.scene-row { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); }
+.scene-row::before, .scene-row::after { content: ""; height: 1px; flex: 1; background: linear-gradient(90deg, transparent, var(--rule-strong), transparent); }
+.scene-kind { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border: 1px solid var(--rule-strong); color: var(--accent); white-space: nowrap; }
+.scene.title .scene-kind { background: var(--accent); color: var(--accent-ink); }
+.scene.intro { margin-top: 2px; }
+.scene.intro .scene-row + .scene-row { margin-top: 4px; }
+.intro-date .scene-cap { font-weight: 400; color: var(--muted); }
+.scene.intro .scene-row .note { margin-top: 0; }
+.scene-cap { color: var(--text); font-weight: 500; text-align: center; }
+.scene-thumb .timg { height: 26px; width: auto; max-width: 120px; object-fit: contain; padding: 2px 4px; }
+.scene-pic { display: block; margin: 8px auto 0; max-width: 100%; }
+.scene-pic .timg { max-height: 56px; max-width: 70%; width: auto; margin: 0 auto; }
+/* layers of one screen, stacked on screen only (the files stay separate originals) */
+.pic-stack { position: relative; display: inline-block; vertical-align: middle; line-height: 0; background: #000; border: 1px solid var(--rule); }
+.pic-stack > img { padding: 0 !important; border: 0 !important; }
+.pic-stack > img + img { position: absolute; left: 0; top: 0; width: 100% !important; height: 100% !important; max-width: none !important; max-height: none !important; background: transparent !important; }   /* upper layers must stay see-through */
+.scene-pic .pic-stack { width: min(100%, 640px); }
+.scene-pic .pic-stack > .timg:first-child { width: 100%; height: auto; max-width: none; max-height: none; margin: 0; }
+/* stacked layers enlarged: as wide as the frame allows, but never taller than it (a height cap alone squashed them) */
+.lb-imgs .pic-stack { width: min(92vw - 2 * var(--gutter) - 16px, 1400px, (80vh - 2 * var(--gutter)) * var(--ar)); aspect-ratio: var(--ar); }
+.pic-screen { position: relative; display: block; width: min(100%, 640px); aspect-ratio: 16 / 9; background: #000; overflow: hidden; line-height: 0; border: 1px solid var(--rule); }   /* one game screen, 3840x2160 */
+.pic-screen > img { position: absolute; margin: 0 !important; padding: 0 !important; border: 0 !important; max-width: none !important; max-height: none !important; aspect-ratio: auto !important; background: transparent !important; }
+.lightbox .pic-screen { width: min(94vw - 2 * var(--gutter) - 16px, (90vh - 2 * var(--gutter)) * 16 / 9); }
+.scene-pic:has(> .pic-screen) { width: min(100%, 640px); }   /* the layers are all absolutely placed, so the button must carry the width */
+.scene-pic > .pic-screen { width: 100%; }
+.lightbox .lb-imgs .pic-stack > .timg:first-child { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }
+.pic-unit { position: relative; display: inline-block; vertical-align: middle; }
+.pic-n { position: absolute; left: 3px; top: 3px; z-index: 1; font: 700 10px/1 var(--font-num); color: #fff; background: rgba(0, 0, 0, 0.75); border: 1px solid var(--rule-strong); border-radius: 3px; padding: 2px 4px; pointer-events: none; }
+.cgimg { background: #000; }   /* transparent CG pieces show on black */
+.lb-imgs { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; max-height: 90%; overflow: auto; }
+.lb-imgs > * { flex: none; }   /* (same reason as .lb-cg) */
+.lightbox .lb-imgs img.timg { width: auto; max-width: min(560px, 70vw); max-height: 34vh; aspect-ratio: auto; object-fit: contain; }
+.lightbox .lb-imgs img.timg.frame { max-width: 92vw; max-height: 80vh; }   /* whole-screen pictures: as large as the window allows */
+.img-inline .timg.frame, .img-inline .pic-stack { width: min(100%, 640px); max-height: none; height: auto; }
+.img-inline .pic-stack > .timg:first-child { width: 100%; max-width: none; }
+
+/* choice: one "…" per option, only the picked option's lines show */
+.choice { margin: 16px 0; padding: 12px; border: 1px dashed var(--rule-strong); background: rgba(255, 255, 255, 0.015); }
+.choice-pick { display: flex; justify-content: center; margin-bottom: 10px; }
+/* ▽ △ ▽ △ ▽ tiled edge to edge: each triangle overlaps its neighbour by half its width */
+.choice-btn { width: 64px; height: 56px; border: 0; padding: 0 0 18px; font-size: 16px; letter-spacing: 1px; color: var(--c);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 32%, #142231), color-mix(in srgb, var(--c) 14%, #0d1720)); }
+.choice-btn + .choice-btn { margin-left: -18px; }
+.choice-btn.up { clip-path: polygon(50% 0, 100% 100%, 0 100%); padding: 22px 0 0; }
+.choice-btn:hover { background: linear-gradient(180deg, color-mix(in srgb, var(--c) 50%, #142231), color-mix(in srgb, var(--c) 26%, #0d1720)); }
+.choice-btn[aria-pressed="true"] { background: var(--c); color: #0d1b26; }
+.choice-hint { text-align: center; font-size: 12px; color: var(--muted); }
+.chip-img .timg { display: inline-block; height: 22px; width: auto; max-width: 160px; padding: 2px 4px; vertical-align: middle; }
+.img-dl dd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bars { display: grid; grid-template-columns: 120px 1fr 40px; gap: 4px 10px; font-size: 12px; align-items: center; }
+.bars .bar { height: 8px; background: var(--rule); }
+.bars .bar i { display: block; height: 100%; background: var(--spk, var(--accent)); }
+.bars .n { text-align: right; color: var(--muted); font-family: var(--font-num); }
+
+/* ---------- data view ---------- */
+#viewData { display: flex; flex-direction: column; }
+.dbar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--rule); background: rgba(8, 14, 21, 0.5); flex-wrap: wrap; }
+.dbar select, .dbar input { height: 28px; background: var(--panel-2); border: 1px solid var(--rule); border-radius: 4px; padding: 0 8px; font-size: 12.5px; }
+.dbar select option { background: var(--bg-1); }
+.dbar .info { font-size: 12px; color: var(--muted); margin-left: auto; }
+.dbar label { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; }
+.dbar #fSpk { max-width: 180px; }
+.dbar #fCh { max-width: 220px; }
+.dbar .btn { height: 28px; }
+.dsep { width: 1px; height: 20px; background: var(--rule-strong); }
+.dtabs { display: flex; gap: 2px; padding: 8px 14px 0; border-bottom: 1px solid var(--rule); }
+.dtabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 14px; font-size: 13px; color: var(--muted); }
+.dtabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 700; }
+.dimgs { padding: 14px; }
+.igrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.icard { margin: 0; border: 1px solid var(--rule); background: rgba(255, 255, 255, 0.02); display: flex; flex-direction: column; }
+.ithumb { padding: 0; border: 0; background: #000; cursor: zoom-in; aspect-ratio: 16 / 10; display: grid; place-items: center; overflow: hidden; }
+.ithumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.icard.cg .ithumb img { width: 100%; height: 100%; object-fit: contain; }   /* whole picture, uncropped */
+.icard figcaption { padding: 8px 10px; font-size: 12px; }
+.ikind { font-size: 10px; font-weight: 700; color: var(--accent); border: 1px solid var(--rule-strong); padding: 0 5px; }
+.iname { font-family: Consolas, monospace; font-size: 11.5px; overflow-wrap: anywhere; }
+.iuses { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+.iuse { text-align: left; background: none; border: 0; border-left: 2px solid var(--lane); padding: 1px 6px; font-size: 11.5px; color: var(--muted); }
+.iuse:hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
+.iuse b { color: var(--lane); font-weight: 500; }
+.dlist { flex: 1; overflow: auto; overscroll-behavior: contain; }
+.dstory { border-bottom: 1px solid var(--rule); }
+.dstory > h4 { position: sticky; top: 0; z-index: 1; margin: 0; padding: 7px 14px; font-size: 12.5px; font-weight: 700;
+  background: #13212f; border-bottom: 1px solid var(--rule); display: flex; gap: 10px; align-items: baseline; }
+.dstory > h4 .sn { font-family: var(--font-num); font-size: 15px; color: var(--accent); }
+.dstory > h4 .m { font-weight: 400; color: var(--muted); font-size: 11.5px; }
+.dstory > h4 .pv { color: var(--lane); }
+.drow { display: grid; grid-template-columns: 74px 30px 46px 120px 1fr; gap: 0 10px; padding: 5px 14px; font-size: 13px; line-height: 1.55; border-bottom: 1px solid rgba(160, 200, 220, 0.06); }
+.drow:hover { background: rgba(255, 255, 255, 0.03); }
+.drow .did { font-family: Consolas, monospace; font-size: 11.5px; color: var(--accent); background: none; border: 0; padding: 0; text-align: left; align-self: start; }
+.drow .did:hover { text-decoration: underline; }
+.drow .dt, .drow .da { font-family: Consolas, monospace; font-size: 11px; color: var(--faint); }
+.drow .ds { color: var(--spk, var(--muted)); font-size: 12px; font-weight: 500; overflow-wrap: anywhere; }
+.drow .dx > div + div { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.drow .dx > div::before { content: attr(data-l); font-family: var(--font-num); font-size: 9.5px; font-weight: 700; color: var(--faint); margin-right: 6px; }
+.drow.flash { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+
+/* ---------- search ---------- */
+.results { position: absolute; top: calc(var(--header-h) + 6px); right: 12px; width: min(500px, calc(100% - 24px)); max-height: 70%; overflow: auto; z-index: 7;
+  background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 6px; display: none; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); }
+.results.open { display: block; }
+.results .rhead { padding: 8px 12px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--panel); }
+.results .rhead button { background: none; border: 1px solid var(--rule); border-radius: 4px; width: 26px; height: 26px; color: var(--muted); }
+.res { display: block; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--rule); padding: 8px 12px; }
+.res:hover { background: rgba(255, 255, 255, 0.04); }
+.res .rm { font-size: 11px; color: var(--muted); }
+.res .rm b { color: var(--lane); }
+.res .rt { font-size: 13px; margin-top: 2px; line-height: 1.5; }
+.res mark, .res .hit-ruby { background: var(--accent); color: var(--accent-ink); padding: 0 2px; }
+.res .hit-ruby rt { color: var(--accent-ink); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1100px) {
+  .brand b { display: none; }
+  .chap-title { max-width: 140px; }
+  .search input { width: 130px; }
+}
+@media (max-width: 960px) {
+  header.top { gap: 6px; padding: 0 8px; }
+  .chap-title { max-width: 96px; }
+  .search input { width: 100px; }
+  .langs span { min-width: 30px; padding: 0 5px; }
+  .seg { padding: 0 6px; }
+}
+@media (max-width: 760px) {
+  :root { --gutter: 6px; --header-h: 128px; --label-w: 58px; }
+  header.top { flex-wrap: wrap; align-content: center; row-gap: 6px; padding: 6px 8px; }
+  #chSeg { flex: 1; min-width: 0; }
+  #chSeg .chap-title { max-width: none; flex: 1; }
+  .spacer { display: none; }
+  .chap-title { max-width: 90px; }
+  .tools { width: 100%; }
+  .search { flex: 1; }
+  .search input { width: 100%; }
+  .langs span { min-width: 30px; padding: 0 4px; }
+  .label .count { display: none; }
+  .label .name { font-size: 10.5px; }
+  .r-body { padding: 12px 12px 60px; }
+  .drow { grid-template-columns: 62px 1fr; }
+  .drow .dt, .drow .da { display: none; }
+  .drow .ds { grid-column: 2; }
+  .drow .dx { grid-column: 1 / -1; }
+  .dl { grid-template-columns: 100px 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M8 3h16l7 13-7 13H8L1 16z" fill="none" stroke="#bfe8ec" stroke-width="2"/><path d="M11 10h10l-5 13z" fill="#bfe8ec"/></svg>
+      <b>IN FALSUS · SCENARIO</b>
+    </div>
+    <div class="views" role="tablist" aria-label="보기">
+      <button role="tab" id="tabTimeline" aria-selected="true">타임라인</button>
+      <button role="tab" id="tabData" aria-selected="false">데이터</button>
+    </div>
+    <div class="seg" role="group" aria-label="챕터 이동" id="chSeg">
+      <button class="arrow" id="chPrev" aria-label="이전 챕터">‹</button>
+      <span class="chap-no" id="chNo">1</span>
+      <span class="chap-title" id="chTitle"></span>
+      <button class="arrow" id="chNext" aria-label="다음 챕터">›</button>
+    </div>
+    <div class="seg" role="group" aria-label="월 이동" id="moSeg">
+      <button class="arrow" id="moPrev" aria-label="이전 달">‹</button>
+      <span class="month"><small id="moYear">10277년</small><span id="moNo">8</span></span>
+      <button class="arrow" id="moNext" aria-label="다음 달">›</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="tools">
+      <div class="search">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l4 4" stroke="currentColor" stroke-width="1.6"/></svg>
+        <input id="q" type="search" placeholder="대사 검색" aria-label="대사 검색 (Enter)">
+      </div>
+      <fieldset class="langs" id="langs"><legend>표시 언어</legend></fieldset>
+      <button class="btn" id="memoBtn" type="button" aria-pressed="false">노트</button>    </div>
+  </header>
+
+  <section class="view" id="viewTimeline">
+    <div class="labels" id="labels"></div>
+    <div class="scroller" id="scroller"><div class="canvas" id="canvas"></div></div>
+  </section>
+
+  <section class="view" id="viewData" hidden>
+    <div class="dtabs" role="tablist" aria-label="데이터 종류">
+      <button role="tab" id="dtLines" aria-selected="true">대사</button>
+      <button role="tab" id="dtImgs" aria-selected="false">이미지</button>
+    </div>
+    <div class="dbar dimg-bar" id="dImgBar" hidden>
+      <label>종류 <select id="iKind" aria-label="이미지 종류">
+        <option value="">전체</option><option value="cg">CG</option><option value="text">연출 이미지</option><option value="jacket">곡 자켓</option>
+      </select></label>
+      <span class="info" id="iInfo"></span>
+    </div>
+    <div class="dlist dimgs" id="dImgs" hidden></div>
+    <div class="dbar" id="dLineBar">
+      <label>챕터 <select id="fCh" aria-label="챕터로 거르기"></select></label>
+      <label>화자 <select id="fSpk" aria-label="화자로 거르기"></select></label>
+      <label>유형 <select id="fType" aria-label="유형으로 거르기">
+        <option value="">전체</option><option value="s">대사</option><option value="n">서술</option><option value="m">메신저</option><option value="l">로그</option>
+      </select></label>
+      <label><input type="checkbox" id="fAnn"> 주석 있는 줄만</label>
+      <button class="btn" id="fReset" type="button">필터 초기화</button>
+      <span class="dsep" aria-hidden="true"></span>
+      <label>ID <select id="dStory" aria-label="ID로 이동"></select></label>
+      <label>대사 ID <input id="dId" placeholder="예: 059-012" size="9" aria-label="대사 ID로 이동"></label>
+      <span class="info" id="dInfo"></span>
+    </div>
+    <div class="dlist" id="dList"></div>
+  </section>
+
+  <div class="results" id="results" role="dialog" aria-label="검색 결과"></div>
+  <div class="scrim" id="scrim"></div>
+  <aside class="reader" id="reader" aria-label="시나리오" aria-hidden="true">
+    <div class="r-head" id="rHead"></div>
+    <div class="r-body" id="rBody"></div>
+  </aside>
+</div>
+
+<link rel="stylesheet" href="memo.css">
+<script src="data.js"></script>
+<script>
+(() => {
+  const D = window.IF_DATA;
+  if (!D) { document.body.innerHTML = '<p style="padding:40px;color:#fff">data.js가 없습니다. build.ps1을 먼저 실행하세요.</p>'; return; }
+
+  // lanes are the viewpoint codes in the story IDs; their names come from the generated data
+  const LANE_COLOR = { Ni: 'var(--c-ni)', Me: 'var(--c-me)', Ay: 'var(--c-ay)', Ir: 'var(--c-ir)', St: 'var(--c-st)', Xt: 'var(--c-xt)' };
+  const LANES = ['Ni', 'Me', 'Ay', 'Ir', 'St'].map(key => {
+    const pov = D.episodes.find(x => x.lane === key)?.pov || {};
+    return { key, ko: pov.ko || pov.en || key, en: pov.en || key, mark: (pov.en || key)[0] };
+  });
+  const CHAR_CODE = { Ni: 0, Me: 1, Ay: 2, Ir: 3, St: 4, Xt: 14 };
+  const SPEAKER_COLOR = Object.fromEntries(LANES.flatMap(l => [[l.en, LANE_COLOR[l.key]], ['*' + l.en, LANE_COLOR[l.key]]]));
+  const LANG_ORDER = ['ko', 'jp', 'en', 'tc', 'sc'];
+  const LANG_BTN = { ko: '한', jp: '日', en: 'EN', tc: '繁', sc: '简' };
+  const LANG_NAME = { ko: '한국어', jp: '日本語', en: 'English', tc: '繁體中文', sc: '简体中文' };
+  const LANG_TAG = { ko: 'KO', jp: 'JP', en: 'EN', tc: 'TC', sc: 'SC' };
+  const TEXT_IDX = { en: 3, jp: 4, ko: 5, tc: 6, sc: 7 };
+  const TYPE_NAME = { s: '대사', n: '서술', ml: '메신저(왼쪽)', mr: '메신저(오른쪽)', l: '로그' };
+
+  const eps = D.episodes;
+  const byChrono = new Map(eps.map(e => [e.c, e]));
+  const byPlay = [...eps].sort((a, b) => a.p - b.p);
+  // story-number order; an episode without dialogue has no number, so it takes the unused one
+  const usedStory = new Set(eps.map(e => e.story));
+  const freeStory = []; for (let n = 1; n <= eps.length; n++) { const s = String(n).padStart(3, '0'); if (!usedStory.has(s)) freeStory.push(s); }
+  for (const e of eps) e.storyKey = /^\d+$/.test(e.story) ? e.story : (freeStory.shift() || '999');
+  const byStoryNo = [...eps].sort((a, b) => a.storyKey.localeCompare(b.storyKey));
+  const ORDERS = { play: { label: '플레이순', seq: byPlay }, chrono: { label: '시간순', seq: eps }, id: { label: 'ID순', seq: byStoryNo } };
+  const YEAR0 = 10276;   // in-story year: 1년차 = 10277
+  const yr = y => y + YEAR0;
+  const unlocks = new Map(eps.map(e => [e.c, []]));
+  for (const e of eps) for (const r of e.req) unlocks.get(r)?.push(e.c);
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('ifv.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('ifv.' + k, JSON.stringify(v)); } catch {} },
+  };
+  // languages the data actually has text for (Korean only comes with the Korean patch)
+  const LANG_OK = LANG_ORDER.filter(k => D.episodes.some(e => e.lines.some(l => l[TEXT_IDX[k]])));
+  const state = {
+    langs: store.get('langs', ['ko']).filter(l => LANG_OK.includes(l)),
+    order: store.get('navOrder', 'play'),
+    imgMode: store.get('imgMode', 'mark'),   // baked-text images: mark | inline | off
+    cgMode: store.get('cgMode', 'off'),      // CG illustrations: off | mark | inline
+    view: 'timeline', open: null, tab: 'script',
+  };
+  if (!state.langs.length) state.langs = LANG_OK.includes('ko') ? ['ko'] : ['en', 'jp'].filter(k => LANG_OK.includes(k));
+  const primary = () => state.langs[0];
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const rich = s => esc(s).replace(/&lt;(\/?)(ruby|rt|i|b)&gt;/g, '<$1$2>').replace(/\n/g, '<br>');
+  const plain = s => String(s ?? '').replace(/<rt>.*?<\/rt>/g, '').replace(/<[^>]+>/g, '');
+  const name = (obj, lang) => (obj && (obj[lang] || obj.ko || obj.en)) || '';
+  const spkName = (en, lang) => en ? name(D.speakers[en], lang) || en : '';
+  // special (Xt) episodes never name their viewpoint, so they have no POV label
+  const povName = (e, lang) => (e.lane === 'Xt' ? '' : name(e.pov, lang));
+  const joinDot = (...parts) => parts.filter(Boolean).join(' · ');
+  const chTitle = (key, lang) => { const c = D.chapters.find(x => x.key === key); return c.title[lang] || c.title.ko; };
+  // block captions are either one string or a per-language name object
+  const capOf = b => (typeof b.caption === 'string' ? b.caption : name(b.caption, primary()));
+  const chShort = key => key.replace('Y1-', '').replace('_', '.');
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const epLabel = e => joinDot(`${e.m}/${e.d} ${D.slots[e.slot]}`, povName(e, 'ko'));
+
+  /* ================= timeline (all chapters on one canvas) ================= */
+  const tl = { col: 120, chapters: [], months: [], cols: [] };
+
+  function buildTimeline() {
+    const sc = $('scroller'), view = $('viewTimeline');
+    const ratio = tl.width ? sc.scrollLeft / tl.width : 0;
+    const RULER = 62;   // rows: chapter · month/year · day
+    // fit every lane into the visible height: special row (0.75) + 5 lanes
+    const SCROLLBAR = 18;   // the horizontal scrollbar eats into the height
+    // the bottom band mirrors the top ruler so the lanes sit centred
+    const FOOT = RULER;
+    view.style.setProperty('--foot-h', FOOT + 'px');
+    const avail = view.clientHeight - RULER - FOOT - SCROLLBAR - 4;
+    const laneH = clamp(Math.floor(avail / 5.75), 52, 150);
+    // only allow vertical scrolling when the window is too short to fit the minimum lane size
+    sc.style.overflowY = laneH * 5.75 > avail + 1 ? 'auto' : 'hidden';
+    const node = Math.round(clamp(laneH * 0.74, 44, 96));
+    const col = node + 22;
+    Object.assign(tl, { col, laneH });
+    view.classList.toggle('compact', laneH < 84);
+    view.style.setProperty('--ruler-h', RULER + 'px');
+    view.style.setProperty('--lane-h', laneH + 'px');
+    view.style.setProperty('--sp-h', Math.round(laneH * 0.75) + 'px');
+    view.style.setProperty('--node', node + 'px');
+    view.style.setProperty('--col', col + 'px');
+
+    // columns: one per (date, slot, number); a chapter change adds a gap
+    tl.cols = []; tl.chapters = []; tl.months = [];
+    // every day (or chapter) change gets a boundary line; its style is the strongest change it marks
+    const bounds = [];
+    let x = col * 0.75, lastKey = null, lastCh = null, lastMon = null, lastYear = null, lastDay = null;
+    for (const e of eps) {
+      const key = `${e.y}-${e.m}-${e.d}${e.slot}-${e.num}`;
+      const newCh = e.ch !== lastCh;
+      if (key !== lastKey || newCh) {
+        const first = !tl.cols.length;
+        if (!first) x += col + (newCh ? col * 0.6 : 0);
+        tl.cols.push({ x, y: e.y, m: e.m, d: e.d, ch: e.ch, eps: [] });
+        const mon = `${e.y}-${e.m}`, day = `${mon}-${e.d}`;
+        const newYear = e.y !== lastYear, newMon = mon !== lastMon;
+        if (newCh || day !== lastDay) {
+          bounds.push({
+            x: first ? x - col / 2 : newCh ? x - col * 0.8 : x - col / 2,
+            kind: first ? 'day' : newCh ? 'chapter' : newYear ? 'year' : newMon ? 'month' : 'day',
+            d: e.d, m: newMon ? e.m : null, y: newYear ? e.y : null,
+          });
+        }
+        if (newCh) tl.chapters.push({ key: e.ch, x });
+        if (newMon) tl.months.push({ y: e.y, m: e.m, x });
+        lastKey = key; lastCh = e.ch; lastYear = e.y; lastMon = mon; lastDay = day;
+      }
+      tl.cols[tl.cols.length - 1].eps.push(e);
+    }
+    tl.width = x + col;
+
+    // the special row has no viewpoint name: just a grey marker
+    const rows = [{ key: 'Xt', ko: '', mark: '', special: true }].concat(LANES);
+    $('labels').innerHTML = rows.map(r => {
+      const n = eps.filter(e => e.lane === r.key).length;
+      return `<div class="label${r.special ? ' special' : ''}" style="--lane:${LANE_COLOR[r.key]}">
+        <div class="hex" aria-hidden="${r.special}">${r.mark}</div>${r.special ? '' : `<div class="name">${esc(r.ko)}</div><div class="count">${n}화</div>`}</div>`;
+    }).join('');
+
+    const h = [];
+    h.push(`<div class="ruler" style="width:${tl.width}px"><div class="ticks"></div>`);
+    for (const c of tl.chapters) h.push(`<div class="chlabel" style="left:${c.x - col / 2 + 4}px"><b>${chShort(c.key)}</b>${esc(chTitle(c.key, primary()).replace(/^[^「]*「|」$/g, ''))}</div>`);
+    for (const b of bounds) {
+      const bx = Math.round(b.x);
+      // month (and year) label sits only on lines where the month changes
+      if (b.m) h.push(`<div class="mlabel${b.y ? ' year' : ''}" style="left:${bx}px">${b.y ? `${yr(b.y)}년 ` : ''}${b.m}월</div>`);
+      h.push(`<div class="tick" style="left:${bx}px">${b.d}</div>`);
+    }
+    h.push('</div>');
+    for (const b of bounds) h.push(`<div class="vline ${b.kind}" style="left:${Math.round(b.x)}px"></div>`);
+    for (const r of rows) {
+      h.push(`<div class="lane${r.special ? ' special' : ''}" style="--lane:${LANE_COLOR[r.key]};width:${tl.width}px"><div class="track"></div>`);
+      for (const c of tl.cols) for (const e of c.eps) if (e.lane === r.key) h.push(nodeHtml(e, c.x));
+      h.push('</div>');
+    }
+    h.push(`<div class="foot" style="width:${tl.width}px"><div class="ticks"></div></div>`);
+    $('canvas').innerHTML = h.join('');
+    $('canvas').style.width = tl.width + 'px';
+    sc.scrollLeft = ratio * tl.width;
+    if (state.open) markCurrent(state.open);
+    updateIndicators();
+  }
+
+  function nodeHtml(e, x) {
+    const sp = e.lane === 'Xt';
+    return `<button class="node" data-c="${e.c}" style="left:${x}px;--lane:${LANE_COLOR[e.lane]}"
+      aria-label="${e.m}월 ${e.d}일 ${esc(D.slots[e.slot])} ${sp ? '특수' : esc(povName(e, 'ko')) + ' 시점'}">
+      <span class="mo">${e.m}</span><span class="dy">${e.d}</span>
+      ${e.song ? '<span class="flags"><i title="곡 플레이 해금">♪</i></span>' : ''}
+      <span class="sl sl-${e.slot}">${esc(D.slots[e.slot])}</span></button>`;
+  }
+
+  function markCurrent(c) {
+    document.querySelectorAll('.node.current').forEach(n => n.classList.remove('current'));
+    document.querySelector(`.node[data-c="${c}"]`)?.classList.add('current');
+  }
+
+  // header indicators follow the scroll position; positions are cached so this stays cheap
+  function onScroll() {
+    $('labels').scrollTop = $('scroller').scrollTop;
+    updateIndicators();
+  }
+  const indexAt = (list, left) => { let i = 0; for (let k = 0; k < list.length; k++) if (list[k].x - tl.col <= left) i = k; return i; };
+  function updateIndicators() {
+    const left = $('scroller').scrollLeft + tl.col * 0.5;
+    const ci = indexAt(tl.chapters, left), mi = indexAt(tl.months, left);
+    const ch = tl.chapters[ci], mo = tl.months[mi];
+    if (ch) { $('chNo').textContent = chShort(ch.key); $('chTitle').textContent = chTitle(ch.key, primary()).replace(/^[^「]*「|」$/g, ''); }
+    $('chPrev').disabled = ci === 0 && $('scroller').scrollLeft < 4; $('chNext').disabled = ci === tl.chapters.length - 1;
+    if (mo) { $('moNo').textContent = mo.m; $('moYear').textContent = `${yr(mo.y)}년`; }
+    $('moPrev').disabled = mi === 0 && $('scroller').scrollLeft < 4; $('moNext').disabled = mi === tl.months.length - 1;
+    tl.ci = ci; tl.mi = mi;
+  }
+  function jumpTo(list, i) {
+    const t = list[clamp(i, 0, list.length - 1)]; if (!t) return;
+    $('scroller').scrollTo({ left: Math.max(0, t.x - tl.col * 1.1), behavior: 'smooth' });
+  }
+  function jumpRel(list, idxKey, dir) {
+    updateIndicators();
+    const now = performance.now();
+    // repeated clicks during a smooth scroll continue from the pending target
+    const pending = tl.pend && tl.pend.list === list && now < tl.pend.until;
+    let i = pending ? tl.pend.i : tl[idxKey];
+    const left = $('scroller').scrollLeft + tl.col * 0.5;
+    // "previous" from the middle of a chapter/month goes to its own start first
+    if (!(dir < 0 && !pending && list[i] && left - (list[i].x - tl.col) > tl.col)) i += dir;
+    i = clamp(i, 0, list.length - 1);
+    tl.pend = { list, i, until: now + 700 };
+    jumpTo(list, i);
+  }
+
+  /* ================= reader ================= */
+  const sequence = () => (ORDERS[state.order] || ORDERS.play).seq;
+
+  function openEpisode(c, lineId, tab) {
+    const e = byChrono.get(c); if (!e) return;
+    state.open = e.c; if (tab) state.tab = tab;
+    markCurrent(e.c);
+    const opening = !$('reader').classList.contains('open');
+    // the timeline behind stays where it is
+    renderReader();
+    $('reader').setAttribute('aria-hidden', 'false');
+    // lay the new content out first, then start the slide on a clean frame
+    if (opening) {
+      const go = () => { if (state.open === e.c) $('reader').classList.add('open'); };
+      requestAnimationFrame(() => requestAnimationFrame(go));
+      setTimeout(go, 80);   // rAF does not run in a background tab
+    } else $('reader').classList.add('open');
+    if (!$('reader').classList.contains('full')) $('scrim').classList.add('open');
+    history.replaceState(null, '', `#ep=${e.c}${lineId ? '&line=' + lineId : ''}`);
+    if (lineId && state.tab === 'script') {
+      const el = document.getElementById('L' + lineId);
+      const opt = el?.closest('.choice-opt');   // a line inside a choice: pick that option so it shows
+      if (opt) pickChoice(opt.closest('.choice'), opt.dataset.opt);
+      if (el) { el.classList.add('hit'); el.scrollIntoView({ block: 'center' }); }
+    } else $('rBody').scrollTop = 0;
+  }
+
+  function renderReader() {
+    const e = byChrono.get(state.open); if (!e) return;
+    const seq = sequence(), i = seq.indexOf(e), prev = seq[i - 1], next = seq[i + 1];
+    const full = $('reader').classList.contains('full');
+    $('reader').style.setProperty('--lane', LANE_COLOR[e.lane]);
+    $('rHead').innerHTML = `
+      <div class="r-top">
+        <div class="r-date"><small>${yr(e.y)}년 · ${e.m}월</small><b>${e.d}</b></div>
+        <div class="r-meta">
+          <div class="r-pov">${povName(e, primary()) ? `${esc(povName(e, primary()))} <span>시점 · ` : '<span>'}<i class="slot-chip sl-${e.slot}" style="font-style:normal">${esc(D.slots[e.slot])}</i>${e.song ? ' · ♪ 곡 해금' : ''}</span></div>
+          <div class="r-sub">${esc(chTitle(e.ch, primary()))} · ${
+            // only the number of the order picked below
+            state.order === 'chrono' ? `시간순 #${e.c}`
+            : state.order === 'id' ? `ID ${e.story === e.storyKey ? esc(e.story) : `${e.storyKey}? (대사 없음, 빈 번호로 추정)`}`
+            : `플레이 #${e.p}`}</div>
+        </div>
+        <div class="r-acts">
+          <button id="rFull" aria-pressed="${full}" title="전체화면 (F)">${full ? '창 모드' : '전체화면'}</button>
+          <button id="rClose" aria-label="닫기">×</button>
+        </div>
+      </div>
+      <div class="r-nav">
+        <button id="rPrev" ${prev ? '' : 'disabled'}>‹ 이전${prev ? ` · ${esc(epLabel(prev))}` : ''}</button>
+        <label class="pos"><select id="rOrder" aria-label="이전/다음 이동 기준">
+          ${Object.entries(ORDERS).map(([k, o]) => `<option value="${k}" ${k === state.order ? 'selected' : ''}>${o.label}</option>`).join('')}
+        </select> ${i + 1}/${seq.length}</label>
+        <button id="rNext" ${next ? '' : 'disabled'}>${next ? `${esc(epLabel(next))} · ` : ''}다음 ›</button>
+      </div>
+      <div class="tabs" role="tablist">
+        <button role="tab" data-tab="script" aria-selected="${state.tab === 'script'}">대본</button>
+        <button role="tab" data-tab="detail" aria-selected="${state.tab === 'detail'}">상세</button>
+        <span class="img-modes">
+        ${e.img && state.tab === 'script' ? `<label class="img-mode">연출 이미지 <select id="rImg">
+          ${[['off', '끔'], ['mark', '표시'], ['inline', '펼침']].map(([v, t]) => `<option value="${v}" ${state.imgMode === v ? 'selected' : ''}>${t}</option>`).join('')}
+        </select></label>` : ''}
+        ${e.cg && state.tab === 'script' ? `<label class="img-mode">CG <select id="rCg">
+          ${[['off', '끔'], ['mark', '표시'], ['inline', '펼침']].map(([v, t]) => `<option value="${v}" ${state.cgMode === v ? 'selected' : ''}>${t}</option>`).join('')}
+        </select></label>` : ''}
+        </span>
+      </div>`;
+    $('rClose').onclick = closeReader;
+    $('rOrder').onchange = () => { state.order = $('rOrder').value; store.set('navOrder', state.order); renderReader(); };
+    $('rFull').onclick = toggleFull;
+    $('rPrev').onclick = () => prev && openEpisode(prev.c);
+    $('rNext').onclick = () => next && openEpisode(next.c);
+    $('rHead').querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { state.tab = b.dataset.tab; renderReader(); $('rBody').scrollTop = 0; });
+    $('rBody').innerHTML = state.tab === 'detail' ? detailHtml(e) : scriptHtml(e);
+    $('rBody').querySelectorAll('[data-go]').forEach(b => b.onclick = () => openEpisode(+b.dataset.go, null, 'detail'));
+    $('rBody').querySelectorAll('[data-jacket]').forEach(b => b.onclick = () => showJacket(b.dataset.jacket));
+    $('rBody').querySelectorAll('[data-imgs]').forEach(b => b.onclick = () => showImages(b.dataset.imgs.split(','), b.dataset.cap, b.dataset.sep !== '1'));
+    $('rBody').querySelectorAll('.choice-btn').forEach(b => b.onclick = () => pickChoice(b.closest('.choice'), b.dataset.opt));
+    $('rImg')?.addEventListener('change', () => { state.imgMode = $('rImg').value; store.set('imgMode', state.imgMode); const top = $('rBody').scrollTop; renderReader(); $('rBody').scrollTop = top; });
+    $('rCg')?.addEventListener('change', () => { state.cgMode = $('rCg').value; store.set('cgMode', state.cgMode); const top = $('rBody').scrollTop; renderReader(); $('rBody').scrollTop = top; });
+    $('rBody').querySelectorAll('[data-cg]').forEach(b => b.onclick = () => showCg(b.dataset.cg.split(','), b.dataset.sep !== '1'));
+    window.IFMemo?.decorate(e);   // notes / annotations / terms (memo.js)
+  }
+
+  function textBlocks(l, cls) {
+    const [main, ...rest] = state.langs;
+    const multi = state.langs.length > 1;
+    const tag = k => multi ? ` data-l="${LANG_TAG[k]}"` : '';
+    // a line without text in the main language falls back to English, labelled as English
+    const used = l[TEXT_IDX[main]] ? main : 'en';
+    const m = `<span class="tx" data-lang="${used}"${multi || used !== main ? ` data-l="${LANG_TAG[used]}"` : ''}>${rich(l[TEXT_IDX[used]])}</span>`;
+    return m + rest.map(k => k !== used && l[TEXT_IDX[k]] ? `<span class="sub" data-lang="${k}"${tag(k)}>${rich(l[TEXT_IDX[k]])}</span>` : '').join('');
+  }
+
+  function scriptHtml(e) {
+    if (!e.lines.length) return cgAt(e, 0) + '<div class="empty">이 에피소드에는 텍스트 대사가 없습니다. (이미지 연출 장면)</div>';
+    // image blocks follow the image setting; blocks without an image (credits) always show
+    const blocks = e.img ? e.img.blocks.filter(b => state.imgMode !== 'off' || !(b.layers || []).length) : [];
+    const blocksAt = pos => cgAt(e, pos) + blocks.filter(b => b.pos === pos).map(sceneBlockHtml).join('');
+    const lineHtml = l => {
+      const [id, spk, type] = l;
+      const color = SPEAKER_COLOR[spk] ? `--spk:${SPEAKER_COLOR[spk]}` : '';
+      const idTag = `<span class="id">${id}</span>`;
+      const body = textBlocks(l) + lineImgHtml(e, id);
+      if (type === 'n' || type === 'l') return `<div class="ln ${type}" id="L${id}">${idTag}${body}</div>`;
+      const who = `<span class="spk">${esc(spkName(spk, primary()))}</span>`;
+      return (type === 'ml' || type === 'mr')
+        ? `<div class="ln ${type}" id="L${id}" style="${color}">${who}<div class="bub">${body}</div></div>`
+        : `<div class="ln s" id="L${id}" style="${color}">${idTag}${who}${body}</div>`;
+    };
+    let html = introVideoHtml(e);
+    for (let i = 0; i < e.lines.length; i++) {
+      html += blocksAt(i);
+      const ch = e.lines[i][9];
+      if (!ch) { html += lineHtml(e.lines[i]); continue; }
+      // a choice: the game shows one "…" per option and plays only the picked option's lines
+      const group = ch.split(':')[0], opts = new Map();
+      for (; i < e.lines.length && e.lines[i][9] && e.lines[i][9].split(':')[0] === group; i++) {
+        const o = e.lines[i][9].split(':')[1];
+        if (!opts.has(o)) opts.set(o, []);
+        opts.get(o).push(e.lines[i]);
+      }
+      i--;
+      html += `<div class="choice" data-group="${esc(group)}">
+        <div class="choice-pick" role="group" aria-label="선택지">${[...opts].map(([o, ls], k) => {
+          // colour = the option's speaker; every second one points up so the row tiles like the in-game triangles
+          const color = SPEAKER_COLOR[ls[0][1]] || 'var(--accent)';
+          return `<button class="choice-btn${k % 2 ? ' up' : ''}" data-opt="${esc(o)}" style="--c:${color}" aria-pressed="false" aria-label="선택지 ${esc(o)}">…</button>`;
+        }).join('')}</div>
+        ${[...opts].map(([o, ls]) => `<div class="choice-opt" data-opt="${esc(o)}" hidden>${ls.map(lineHtml).join('')}</div>`).join('')}
+        <div class="choice-hint">선택지를 고르면 그 대사가 나옵니다.</div></div>`;
+    }
+    return html + cgAt(e, e.lines.length) + blocks.filter(b => b.pos >= e.lines.length).map(sceneBlockHtml).join('');
+  }
+
+  /* ---- story pictures (CGs and pictures with drawn text) ----
+     The pictures are the game's originals. The viewer only puts a dark backdrop behind them and,
+     in the reader, stacks a transparent picture on the one before it when both have the same size
+     (layers of one screen). Everything else is shown side by side, numbered when there are several. */
+  const IMG_LIGHT = new Set();   // text pictures with dark lettering that would need a light backdrop (none now)
+  const cgInfo = n => D.cgs?.[n] || { src: `cg/${n}.jpg`, w: 0, h: 0, a: false };
+  const cgSrc = n => cgInfo(n).src;
+  const layerInfo = n => { const t = D.textimg?.[n]; return t ? { src: t.src[primary()] || t.src.en || Object.values(t.src)[0], w: t.w, h: t.h, a: t.a } : { src: '', w: 0, h: 0, a: false }; };
+  const imgSrc = n => layerInfo(n).src;
+  // [{src, w, h, a, alt, cls}] -> units; a transparent picture the same size as the unit below it is a layer of that unit
+  function stackUnits(items, stack = true) {
+    const units = [];
+    for (const it of items) {
+      const last = units[units.length - 1];
+      if (stack && last && it.a && it.w && last[0].w === it.w && last[0].h === it.h) last.push(it); else units.push([it]);
+    }
+    return units;
+  }
+  const picImg = (it, extra = '') => `<img class="${it.cls}${extra}" src="${esc(it.src)}" alt="${esc(it.alt)}" loading="lazy">`;
+  function unitsHtml(units, numbered) {
+    return units.map((u, i) => {
+      // --ar: the stack's own shape, so it can be fitted to the window in both directions at once
+      const pic = u.length === 1 ? picImg(u[0]) : `<span class="pic-stack" style="--ar:${u[0].w && u[0].h ? (u[0].w / u[0].h).toFixed(4) : 1.7778}">${u.map(it => picImg(it)).join('')}</span>`;
+      return numbered && units.length > 1 ? `<span class="pic-unit"><span class="pic-n" title="${i + 1}번째로 나옴">${i + 1}</span>${pic}</span>` : pic;
+    }).join('');
+  }
+  // whole screens the script builds from several pictures (chapter cards, collages): drawn in a 16:9 frame where the script
+  // puts them. place = [x, y, anchorX, anchorY, scaleX, scaleY] on a 3840x2160 screen, y counted from the bottom.
+  const SCREENS = new Map();   // names.join(',') -> {name: place}, filled while the reader is drawn
+  function screenHtml(items, names, place) {
+    const pct = v => `${(v * 100).toFixed(3)}%`;
+    return `<span class="pic-screen">${items.map((it, i) => {
+      const [x, y, ax, ay, sx, sy] = place[names[i]];
+      const w = it.w * sx / 3840, h = it.h * sy / 2160;
+      return `<img src="${esc(it.src)}" alt="${esc(it.alt)}" loading="lazy" style="left:${pct(x - ax * w)};top:${pct(1 - y - (1 - ay) * h)};width:${pct(w)};height:${pct(h)}">`;
+    }).join('')}</span>`;
+  }
+  const placed = (names, place) => place && names.length && names.every(n => place[n]?.length === 6);
+  const textItems = names => names.map(n => { const L = layerInfo(n); return { ...L, alt: `연출 이미지 ${n}`, cls: `timg${IMG_LIGHT.has(n) ? ' light' : ''}${L.w >= 1920 && L.w / L.h < 3 ? ' frame' : ''}` }; });   // frame: a whole-screen picture
+  const cgItems = names => names.map(n => ({ ...cgInfo(n), alt: `CG ${n}`, cls: 'cgimg' }));
+  const imgTag = n => picImg(textItems([n])[0]);
+
+  /* ---- CG illustrations (optional; off by default) ---- */
+  function cgAt(e, pos) {
+    if (state.cgMode === 'off' || !e.cg) return '';
+    // 표시: a button only; 펼침: the pictures themselves
+    return e.cg.filter(g => (pos >= e.lines.length ? g.pos >= pos : g.pos === pos)).map(g => {
+      // a collage: transparent pieces of other sizes laid over a picture
+      const items = cgItems(g.imgs);
+      if (g.imgs.length > 1 && placed(g.imgs, g.place) && items.some(it => it.a && (it.w !== items[0].w || it.h !== items[0].h))) SCREENS.set(g.imgs.join(','), g.place);
+      return g;
+    }).map(g => state.cgMode === 'inline'
+      ? `<button class="cg-row open" data-cg="${g.imgs.join(',')}" aria-label="CG 크게 보기">${SCREENS.has(g.imgs.join(',')) ? screenHtml(cgItems(g.imgs), g.imgs, g.place) : unitsHtml(stackUnits(cgItems(g.imgs)), true)}</button>`
+      : `<div class="cg-mark"><button class="img-btn" data-cg="${g.imgs.join(',')}" title="게임에서는 여기서 CG가 나옵니다">🖼 CG${g.imgs.length > 1 ? ` ${g.imgs.length}장` : ''}</button></div>`).join('');
+  }
+  // detail tab: every CG of the episode as it is, where it first appears, regardless of the CG setting
+  function cgDetailHtml(e) {
+    if (!e.cg) return '';
+    const total = e.cg.reduce((n, g) => n + g.imgs.length, 0);
+    const rows = e.cg.map(g => `<dt>${g.pos >= e.lines.length ? '마지막 줄 뒤' : `<span class="mono">${esc(e.lines[g.pos][0])}</span> 앞`}</dt>
+      <dd><button class="cg-chip" data-cg="${g.imgs.join(',')}" data-sep="1" aria-label="CG 크게 보기">${unitsHtml(stackUnits(cgItems(g.imgs), false), false)}</button>
+      <span class="mono cg-names">${g.imgs.map(n => esc(n) + (cgInfo(n).a ? ' <span class="note">(투명 조각)</span>' : '')).join('<br>')}</span></dd>`).join('');
+    return `<div class="dsec"><h3>CG — ${total}장</h3><dl class="dl img-dl">${rows}</dl>
+      <div class="note">처음 화면에 나타나는 위치입니다. 같은 회차에서 다시 나오는 경우는 한 번만 적었습니다. 원본 그대로이며, 대본 화면에서는 같은 크기의 투명 조각을 아래 그림 위에 겹쳐 보여 줍니다. 출처: sp-story/assets/cg</div></div>`;
+  }
+  function showCg(names, stack = true) {
+    const box = document.createElement('div');
+    box.className = 'lightbox';
+    const place = stack && SCREENS.get(names.join(','));
+    box.innerHTML = `<figure class="lb-cg">${place ? screenHtml(cgItems(names), names, place) : unitsHtml(stackUnits(cgItems(names), stack), stack)}</figure>`;
+    box.onclick = () => box.remove();
+    $('app').appendChild(box);
+  }
+  /* ---- end of CG ---- */
+  function pickChoice(box, opt) {
+    box.querySelectorAll('.choice-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.opt === opt)));
+    box.querySelectorAll('.choice-opt').forEach(p => { p.hidden = p.dataset.opt !== opt; });
+    box.querySelector('.choice-hint').hidden = true;
+  }
+
+  /* ---- pictures with drawn text (optional; remove this block + its calls to drop the feature) ---- */
+  function lineImgHtml(e, id) {
+    const keys = state.imgMode !== 'off' && e.img?.lines?.[id];
+    if (!keys || !keys.length) return '';
+    if (state.imgMode === 'inline') return `<div class="img-inline"><button data-imgs="${keys.join(',')}">${unitsHtml(stackUnits(textItems(keys)), true)}</button></div>`;
+    return `<button class="img-btn" data-imgs="${keys.join(',')}" title="게임에서는 이 줄이 이미지로 나옵니다">🖼 이미지${keys.length > 1 ? ` ${keys.length}장` : ''}</button>`;
+  }
+  function sceneBlockHtml(b) {
+    const layers = b.layers || [];
+    const inline = state.imgMode === 'inline' && layers.length;
+    // chapter start/end cards: the layers where the script puts them on screen
+    const screen = (b.kind === 'title' || b.kind === 'end') && placed(layers, b.place);
+    if (screen) SCREENS.set(layers.join(','), b.place);
+    const pics = screen ? screenHtml(textItems(layers), layers, b.place) : unitsHtml(stackUnits(textItems(layers)), true);
+    const pic = !layers.length ? ''
+      : inline ? `<button class="scene-pic" data-imgs="${layers.join(',')}" data-cap="${esc(capOf(b))}">${pics}</button>`
+      : `<button class="img-btn" data-imgs="${layers.join(',')}" data-cap="${esc(capOf(b))}" title="게임에서는 여기서 이미지가 나옵니다">🖼 이미지${layers.length > 1 ? ` ${layers.length}장` : ''}</button>`;   // 표시: a button only
+    return `<div class="scene ${b.kind}"><div class="scene-row"><span class="scene-cap">${esc(capOf(b))}</span>${inline ? '' : pic}</div>${inline ? pic : ''}</div>`;
+  }
+  function showImages(keys, caption, stack = true) {
+    const box = document.createElement('div');
+    box.className = 'lightbox';
+    const place = stack && SCREENS.get(keys.join(','));
+    box.innerHTML = `<figure class="lb-imgs">${place ? screenHtml(textItems(keys), keys, place) : unitsHtml(stackUnits(textItems(keys), stack), stack)}${caption ? `<p>${esc(caption)}</p>` : ''}</figure>`;
+    box.onclick = () => box.remove();
+    $('app').appendChild(box);
+  }
+  // detail tab: the pictures one by one, as they are
+  function imgDetailHtml(e) {
+    if (!e.img) return '';
+    const rows = [
+      ...Object.entries(e.img.lines).map(([id, keys]) => `<dt class="mono">${id}</dt><dd><button class="chip-img" data-imgs="${keys.join(',')}" data-sep="1">${keys.map(k => imgTag(k)).join('')}</button> <span class="note">대사와 같은 내용</span></dd>`),
+      ...e.img.blocks.filter(b => (b.layers || []).length).map(b => `<dt>${b.pos >= e.lines.length ? '마지막 줄 뒤' : esc(e.lines[b.pos][0]) + ' 앞'}</dt><dd><button class="chip-img" data-imgs="${b.layers.join(',')}" data-cap="${esc(capOf(b))}" data-sep="1">${b.layers.map(k => imgTag(k)).join('')}</button> ${esc(capOf(b))} <span class="note">이미지에만 있음${b.layers.length > 1 ? ` · ${b.layers.length}장` : ''}</span></dd>`),
+    ];
+    return `<div class="dsec"><h3>연출 이미지</h3><dl class="dl img-dl">${rows.join('')}</dl><div class="note">출처: sp-story/assets/text (글자가 그려진 이미지). 원본 그대로이며, 대본 화면에서는 같은 크기의 투명 레이어를 겹쳐 보여 줍니다. 언어는 맨 앞에 켠 언어를 따릅니다.</div></div>`;
+  }
+  /* ---- end of pictures with drawn text ---- */
+  function chip(c) {
+    const t = byChrono.get(c); if (!t) return '';
+    return `<button class="chip" data-go="${c}" style="--lane:${LANE_COLOR[t.lane]}">#${t.c} <b>${esc(povName(t, 'ko'))}</b> ${t.m}/${t.d} ${esc(D.slots[t.slot])} <span class="mono">${esc(t.file)}</span></button>`;
+  }
+
+  function songHtml(e) {
+    if (!e.song && !e.enc) return '<span class="note">없음</span>';
+    const s = D.songs[e.song], enc = D.encounters[e.enc], L = primary();
+    const title = s ? name(s.title, L) : e.song, artist = s ? name(s.artist, L) : '';
+    const img = s && s.jacket ? `<button data-jacket="${esc(e.song)}" aria-label="${esc(title)} 자켓 크게 보기"><img src="${esc(s.jacket)}" alt="${esc(title)} 자켓"></button>` : '';
+    return `<div class="song">${img}<div>
+      <div class="st">${esc(title)}</div><div class="sa">${esc(artist)} · <span class="mono">${esc(e.song)}</span></div>
+      ${enc ? `<div class="se">조우 #${esc(e.enc)} <b>${esc(name(enc.name, L))}</b> · 상대 ${esc(name(enc.opponent, L))}</div>` : ''}
+    </div></div>`;
+  }
+
+  function showJacket(id) {
+    const s = D.songs[id]; if (!s?.jacket) return;
+    const box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = `<figure style="margin:0"><img src="${esc(s.jacket)}" alt=""><p>${esc(name(s.title, primary()))} — ${esc(name(s.artist, primary()))}</p></figure>`;
+    box.onclick = () => box.remove();
+    $('app').appendChild(box);
+  }
+
+  // IntroVideoKey = 1 + state*3 + time; states follow the video file names (01 Stable … 10 Needling),
+  // labels come from the game's Story_IntroVideo_* strings in the generated data (D.rmi)
+  const SKY_STATES = ['Stable', 'Thin', 'Dense', 'Islands', 'Shifting', 'Low Visibility', 'Splitting', 'Scattered', 'Needling']
+    .map((file, i) => [file, D.rmi?.states?.[i]]);
+  const SKY_TIMES = [['Dawndusk', '새벽·저녁'], ['Day', '낮'], ['Night', '밤']];
+  const rmiText = x => (x && (x[primary()] || x.ko || x.en)) || '';
+  function introVideo(k) {
+    if (!k) return null;
+    const st = SKY_STATES[Math.floor((k - 1) / 3)], tm = SKY_TIMES[(k - 1) % 3];
+    const label = `${rmiText(D.rmi?.label) || 'RMI'} ${st ? rmiText(st[1]) || st[0] : ''}`;
+    return {
+      cap: st ? `${label} · ${tm[1]}` : `키 ${k}`,
+      state: st ? label : `키 ${k}`,
+      file: st ? `${String(Math.floor((k - 1) / 3) + (k > 9 ? 2 : 1)).padStart(2, '0')} ${st[0]} ${tm[0]}` : '',
+    };
+  }
+  // shown above the first line of the script, like the game's opening: the intro video (RMI 분포),
+  // then the time slot and date (only where the game shows its clock, CanShowClock)
+  function introVideoHtml(e) {
+    const v = introVideo(e.video);
+    const rows = [];
+    if (v) rows.push(`<div class="scene-row"><span class="scene-cap">${esc(v.state)}</span></div>`);
+    if (e.clock) rows.push(`<div class="scene-row intro-date"><span class="scene-cap">${esc(D.slots[e.slot])} · <span class="mono">${yr(e.y)}/${e.m}/${e.d}</span></span></div>`);
+    return rows.length ? `<div class="scene intro">${rows.join('')}</div>` : '';
+  }
+
+  function detailHtml(e) {
+    const id = e.id;
+    const bits = { y: id >>> 28, m: (id >> 24) & 15, d: (id >> 19) & 31, slot: (id >> 15) & 15, num: (id >> 11) & 15, ch: (id >> 3) & 31, f: id & 7 };
+    const req = e.req.map(chip).join('') || '<span class="note">없음 (처음부터 열림)</span>';
+    const unl = (unlocks.get(e.c) || []).map(chip).join('') || '<span class="note">없음</span>';
+    const counts = new Map(); let narr = 0;
+    for (const l of e.lines) { if (l[2] === 'n') narr++; else if (l[1]) counts.set(l[1], (counts.get(l[1]) || 0) + 1); }
+    const top = [...counts].sort((a, b) => b[1] - a[1]);
+    const max = Math.max(1, narr, ...top.map(t => t[1]));
+    const bar = (label, n, color) => `<span style="${color ? '--spk:' + color : ''}">${esc(label)}</span><span class="bar" style="${color ? '--spk:' + color : ''}"><i style="width:${(n / max) * 100}%"></i></span><span class="n">${n}</span>`;
+    return `
+      <div class="dsec"><h3>기본 정보</h3><dl class="dl">
+        <dt>챕터</dt><dd>${esc(chTitle(e.ch, primary()))} <span class="mono">(${e.ch})</span></dd>
+        <dt>작중 일시</dt><dd>${yr(e.y)}년 ${e.m}월 ${e.d}일 ·${e.slot} ${esc(D.slots[e.slot])}</dd>
+        <dt>시점</dt><dd>${esc(povName(e, 'ko'))} <span class="mono">(${e.lane})</span></dd>
+        <dt>순서</dt><dd>시간순 #${e.c} · 플레이순 #${e.p}</dd>
+        <dt>ID</dt><dd><span class="mono">${esc(e.story)}</span> (대사 ID 앞자리)</dd>
+        <dt>스크립트 파일</dt><dd><span class="mono">${esc(e.file)}.sps</span></dd>
+        <dt>도입 영상</dt><dd>${(v => v ? `${esc(v.cap)} <span class="note">(키 ${e.video} · 영상 <span class="mono">${esc(v.file)}</span>)</span>` : '<span class="note">없음</span>')(introVideo(e.video))}</dd>
+      </dl></div>
+      <div class="dsec"><h3>별도 표기</h3><dl class="dl">
+        <dt>-O 표기</dt><dd>${e.o ? '있음 — 파일명에 <span class="mono">-O</span>, 식별자 플래그 4' : '없음'}</dd>
+      </dl><div class="note">O 표기의 의미는 게임 데이터에 적혀 있지 않습니다.</div></div>
+      <div class="dsec"><h3>해금 조건</h3><dl class="dl">
+        <dt>먼저 읽어야 할 에피소드</dt><dd><div class="chips">${req}</div></dd>
+        <dt>곡 플레이 · 조우</dt><dd>${songHtml(e)}</dd>
+        <dt>이 에피소드가 여는 것</dt><dd><div class="chips">${unl}</div></dd>
+      </dl><div class="note">출처: StoryDetails.orderedStoryEntryUnlockRequirements / SongPlayRequirements / EncounterRequirements</div></div>
+      ${imgDetailHtml(e)}
+      ${cgDetailHtml(e)}
+      ${window.IFMemo ? window.IFMemo.detailHtml(e) : ''}
+      <div class="dsec"><h3>대사 통계 — 총 ${e.lines.length}줄</h3><div class="bars">
+        ${narr ? bar(`${povName(e, 'ko')} (서술)`.trim(), narr, LANE_COLOR[e.lane]) : ''}
+        ${top.map(([s, n]) => bar(spkName(s, 'ko'), n, SPEAKER_COLOR[s])).join('')}
+      </div></div>
+      <div class="dsec"><h3>식별자 (StoryIdentifier)</h3><dl class="dl">
+        <dt>값</dt><dd class="mono">${id} · 0x${id.toString(16).toUpperCase()}</dd>
+      </dl>
+      <table class="bits"><tr><th>연 (28~)</th><th>월 (24~27)</th><th>일 (19~23)</th><th>시간대 (15~18)</th><th>번호 (11~14)</th><th>시점 (3~7)</th><th>플래그 (0~2)</th></tr>
+      <tr><td>${bits.y}</td><td>${bits.m}</td><td>${bits.d}</td><td>${bits.slot} (${String.fromCharCode(65 + bits.slot)})</td><td>${bits.num}</td><td>${bits.ch} (${e.lane})</td><td>${bits.f}${bits.f === 4 ? ' (-O)' : ''}</td></tr></table></div>`;
+  }
+
+  function closeReader() {
+    if ($('reader').classList.contains('full')) toggleFull();
+    $('reader').classList.remove('open'); $('reader').setAttribute('aria-hidden', 'true'); $('scrim').classList.remove('open');
+    state.open = null; history.replaceState(null, '', location.pathname);
+    document.querySelectorAll('.node.current').forEach(n => n.classList.remove('current'));
+    window.IFMemo?.readerClosed?.();
+  }
+
+  function toggleFull() {
+    const r = $('reader'), on = !r.classList.contains('full');
+    r.classList.toggle('full', on);
+    // fills the browser window (not the monitor): the app frame drops its margin while reading full
+    $('app').classList.toggle('app-full', on);
+    $('scrim').classList.toggle('open', !on && r.classList.contains('open'));
+    if (state.open) renderReader();
+    if (state.view === 'timeline') requestAnimationFrame(buildTimeline);
+  }
+
+  /* ================= data view (all lines in ID order) ================= */
+  const byStory = [...eps].filter(e => e.lines.length).sort((a, b) => a.story.localeCompare(b.story));
+  let dataBuilt = false, io = null;
+
+  // filters: chapter, speaker (script name key), type (s / n / m = messenger left+right / l)
+  const dFilter = { ch: '', spk: '', type: '', ann: false };
+  const TOTAL_LINES = byStory.reduce((n, e) => n + e.lines.length, 0);
+  const spkCounts = (() => { const m = new Map(); for (const e of byStory) for (const l of e.lines) if (l[1]) m.set(l[1], (m.get(l[1]) || 0) + 1); return [...m].sort((a, b) => b[1] - a[1]); })();
+  const lineMatches = (e, l) => (!dFilter.ch || e.ch === dFilter.ch)
+    && (!dFilter.ann || !!window.IFMemo?.lineHasAnn(l[0]))
+    && (!dFilter.type || (dFilter.type === 'm' ? (l[2] === 'ml' || l[2] === 'mr') : l[2] === dFilter.type))
+    && (!dFilter.spk || l[1] === dFilter.spk);
+  const filteredLines = e => e.lines.filter(l => lineMatches(e, l));
+
+  function buildFilterOptions() {
+    $('fCh').innerHTML = '<option value="">전체</option>' + D.chapters.map(c => `<option value="${c.key}">${esc(chTitle(c.key, primary()))}</option>`).join('');
+    $('fSpk').innerHTML = '<option value="">전체</option>' + spkCounts.map(([k, n]) => `<option value="${esc(k)}">${esc(spkName(k, primary()))} (${n})</option>`).join('');
+    $('fCh').value = dFilter.ch; $('fSpk').value = dFilter.spk; $('fType').value = dFilter.type;
+  }
+  function buildData() {
+    buildFilterOptions();
+    resetDataSections();
+    dataBuilt = true;
+  }
+  function resetDataSections() {
+    io?.disconnect();
+    if (dataBuilt) buildFilterOptions();   // speaker / chapter names follow the primary language
+    const per = 26 + 20 * (state.langs.length - 1);
+    const shown = byStory.map(e => [e, filteredLines(e).length]).filter(([, n]) => n);
+    const lineCount = shown.reduce((s, [, n]) => s + n, 0);
+    const filtered = dFilter.ch || dFilter.spk || dFilter.type || dFilter.ann;
+    $('dInfo').textContent = `ID ${shown.length}개 · ${lineCount.toLocaleString()}줄${filtered ? ` 표시 (전체 ${TOTAL_LINES.toLocaleString()}줄)` : ''} · ID 순`;
+    $('dStory').innerHTML = shown.map(([e]) => `<option value="${e.story}">${esc(joinDot(e.story, `${e.m}/${e.d} ${D.slots[e.slot]}`, povName(e, 'ko')))}</option>`).join('');
+    $('dList').innerHTML = shown.length ? shown.map(([e, n]) => `<section class="dstory" id="S${e.story}" data-c="${e.c}" style="--lane:${LANE_COLOR[e.lane]}">
+      <h4><span class="sn">${e.story}</span><span class="pv">${esc(povName(e, primary()))}</span>
+      <span class="m">${yr(e.y)}년 ${e.m}/${e.d} ${e.slot} ${esc(D.slots[e.slot])} · ${esc(e.file)} · ${filtered ? `${n}/${e.lines.length}` : e.lines.length}줄 · 시간순 #${e.c}</span></h4>
+      <div class="drows" style="min-height:${n * per}px"></div></section>`).join('')
+      : '<div class="empty">조건에 맞는 대사가 없습니다.</div>';
+    io = new IntersectionObserver(entries => {
+      for (const en of entries) if (en.isIntersecting) { fillSection(en.target); io.unobserve(en.target); }
+    }, { root: $('dList'), rootMargin: '1200px 0px' });
+    $('dList').querySelectorAll('.dstory').forEach(s => io.observe(s));
+  }
+  function fillSection(sec) {
+    const e = byChrono.get(+sec.dataset.c), box = sec.querySelector('.drows');
+    if (box.dataset.done) return;
+    box.innerHTML = filteredLines(e).map(l => {
+      const color = SPEAKER_COLOR[l[1]] ? `--spk:${SPEAKER_COLOR[l[1]]}` : '';
+      const who = l[2] === 'n' ? `(${esc(`${povName(e, primary())} 서술`.trim())})` : l[2] === 'l' ? '(로그)' : esc(spkName(l[1], primary()));
+      const tx = state.langs.map(k => `<div data-l="${LANG_TAG[k]}">${rich(l[TEXT_IDX[k]] || '')}</div>`).join('');
+      return `<div class="drow" id="D${l[0]}" style="${color}"><button class="did" data-c="${e.c}" data-l="${l[0]}" title="대본에서 열기">${l[0]}</button>
+        <span class="dt" title="${TYPE_NAME[l[2]]}">${l[2]}</span><span class="da">${esc(l[8] || '')}</span><span class="ds">${who}</span><div class="dx">${tx}</div></div>`;
+    }).join('');
+    box.style.minHeight = ''; box.dataset.done = '1';
+  }
+  function gotoData(lineOrStory) {
+    const story = lineOrStory.slice(0, 3), sec = $('S' + story); if (!sec) return false;
+    fillSection(sec);
+    const target = lineOrStory.length > 3 ? $('D' + lineOrStory) : sec;
+    if (!target) return false;
+    // sections above fill in lazily and change height, so re-align a few times
+    const align = () => { const list = $('dList'); list.scrollTop += target.getBoundingClientRect().top - list.getBoundingClientRect().top - (target === sec ? 0 : 40); };
+    align(); setTimeout(align, 60); setTimeout(align, 250);
+    if (target !== sec) { target.classList.add('flash'); setTimeout(() => target.classList.remove('flash'), 1600); }
+    return true;
+  }
+
+  /* ================= data view: image catalog ================= */
+  let imgsBuilt = false;
+  function imageCatalog() {
+    const map = new Map();   // "kind:key" -> {kind, key, uses: [{e, line}]}
+    const add = (kind, key, e, line) => {
+      const id = `${kind}:${key}`;
+      if (!map.has(id)) map.set(id, { kind, key, uses: [] });
+      const it = map.get(id);
+      if (!it.uses.some(u => u.e === e && u.line === line)) it.uses.push({ e, line });
+    };
+    for (const e of eps) {
+      for (const g of e.cg || []) for (const n of g.imgs) add('cg', n, e, e.lines[g.pos]?.[0] || null);
+      if (e.img) {
+        for (const [id, keys] of Object.entries(e.img.lines)) for (const k of keys) add('text', k, e, id);
+        for (const b of e.img.blocks) for (const k of b.layers || []) add('text', k, e, e.lines[b.pos]?.[0] || null);
+      }
+      if (e.song && D.songs[e.song]) add('jacket', e.song, e, null);
+    }
+    return [...map.values()];   // eps are in chronological order, so first use comes first
+  }
+  const KIND_NAME = { cg: 'CG', text: '연출 이미지', jacket: '곡 자켓' };
+  function imgCardHtml(it) {
+    const src = it.kind === 'cg' ? cgSrc(it.key) : it.kind === 'text' ? imgSrc(it.key) : D.songs[it.key].jacket;
+    const title = it.kind === 'jacket' ? `${name(D.songs[it.key].title, primary())} — ${name(D.songs[it.key].artist, primary())}` : it.key;
+    const uses = it.uses.map(u => `<button class="iuse" data-c="${u.e.c}" ${u.line ? `data-l="${u.line}"` : ''} style="--lane:${LANE_COLOR[u.e.lane]}">
+      #${u.e.c} ${u.e.m}/${u.e.d} ${esc(D.slots[u.e.slot])}${povName(u.e, 'ko') ? ` · <b>${esc(povName(u.e, 'ko'))}</b>` : ''}${u.line ? ` · <span class="mono">${u.line}</span>` : ''}</button>`).join('');
+    return `<figure class="icard ${it.kind}">
+      <button class="ithumb" data-kind="${it.kind}" data-key="${esc(it.key)}" aria-label="${esc(title)} 크게 보기"><img src="${esc(src)}" alt="" loading="lazy"></button>
+      <figcaption><span class="ikind">${KIND_NAME[it.kind]}</span> <span class="iname">${esc(title)}</span><div class="iuses">${uses}</div></figcaption></figure>`;
+  }
+  function renderImages() {
+    const all = imageCatalog(), kind = $('iKind').value;
+    const list = all.filter(it => !kind || it.kind === kind);
+    const counts = Object.keys(KIND_NAME).map(k => `${KIND_NAME[k]} ${all.filter(it => it.kind === k).length}`).join(' · ');
+    $('iInfo').textContent = `${list.length}개 표시 (${counts}) · 처음 나오는 순`;
+    $('dImgs').innerHTML = `<div class="igrid">${list.map(imgCardHtml).join('')}</div>`;
+    imgsBuilt = true;
+  }
+  // sub-tabs of the data view; 'anns' (annotations) and 'terms' are added by memo.js
+  function setDataTab(t) {
+    const imgs = t === 'imgs', anns = t === 'anns', terms = t === 'terms';
+    $('dtLines').setAttribute('aria-selected', String(t === 'lines')); $('dtImgs').setAttribute('aria-selected', String(imgs));
+    $('dtAnns')?.setAttribute('aria-selected', String(anns));
+    $('dtTerms')?.setAttribute('aria-selected', String(terms));
+    $('dLineBar').hidden = $('dList').hidden = t !== 'lines';
+    $('dImgBar').hidden = $('dImgs').hidden = !imgs;
+    if ($('dAnns')) $('dAnnBar').hidden = $('dAnns').hidden = !anns;
+    if ($('dTerms')) $('dTermBar').hidden = $('dTerms').hidden = !terms;
+    if (imgs && !imgsBuilt) renderImages();
+    if (anns) window.IFMemo?.renderAnnList();
+    if (terms) window.IFMemo?.renderTermList();
+    if (t === 'lines' && dataBuilt) resetDataSections();   // annotation filter may have changed
+  }
+
+  function setView(v) {
+    state.view = v;
+    $('viewTimeline').hidden = v !== 'timeline'; $('viewData').hidden = v !== 'data';
+    $('chSeg').hidden = $('moSeg').hidden = v !== 'timeline';
+    $('tabTimeline').setAttribute('aria-selected', String(v === 'timeline'));
+    $('tabData').setAttribute('aria-selected', String(v === 'data'));
+    if (v === 'data' && !dataBuilt) buildData();
+    if (v === 'timeline') buildTimeline();
+  }
+
+  /* ================= search ================= */
+  // text a query can match: the base text (ruby readings dropped), the text read aloud
+  // (ruby bases replaced by their readings) and both joined, each with line breaks removed or turned into spaces
+  function searchForms(raw) {
+    const base = plain(raw);
+    const reading = String(raw).replace(/<ruby>(.*?)<\/ruby>/gs, (m, inner) => (inner.match(/<rt>(.*?)<\/rt>/gs) || []).map(r => r.slice(4, -5)).join('') || inner)
+      .replace(/<[^>]+>/g, '');
+    const both = String(raw).replace(/<[^>]+>/g, '');   // base + reading, as text copied from the screen reads
+    return [base, reading, both].flatMap(t => [t.replace(/\n/g, ''), t.replace(/\n/g, ' ')]).map(t => t.toLowerCase());
+  }
+  // highlight the query inside already-rendered rich text (works in ruby bases and readings)
+  function markText(root, ql) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const n of nodes) {
+      const t = n.nodeValue, i = t.toLowerCase().indexOf(ql);
+      if (i < 0) continue;
+      const m = document.createElement('mark'); m.textContent = t.slice(i, i + ql.length);
+      const after = n.splitText(i); after.nodeValue = after.nodeValue.slice(ql.length);
+      n.parentNode.insertBefore(m, after);
+    }
+    // a match spanning a ruby's base and reading: highlight the whole ruby
+    if (!root.querySelector('mark')) root.querySelectorAll('ruby').forEach(r => { if (ql.includes(r.textContent.toLowerCase())) r.classList.add('hit-ruby'); });
+  }
+
+  function search(q) {
+    const box = $('results'); q = q.trim();
+    if (!q) { box.classList.remove('open'); return; }
+    const ql = q.toLowerCase(), hits = [];
+    outer: for (const e of eps) for (const l of e.lines) {
+      for (const k of state.langs) {
+        const raw = l[TEXT_IDX[k]] || '';
+        if (searchForms(raw).some(t => t.includes(ql))) { hits.push([e, l, raw]); if (hits.length >= 300) break outer; break; }
+      }
+    }
+    const memoHits = window.IFMemo ? window.IFMemo.searchHtml(q) : '';   // notes and annotations first
+    box.innerHTML = `<div class="rhead"><span>“${esc(q)}” — ${hits.length >= 300 ? '300+' : hits.length}건 (${state.langs.map(k => LANG_TAG[k]).join('·')})</span><button id="resClose" aria-label="닫기">×</button></div>` + memoHits +
+      (hits.length ? hits.map(([e, l, t]) => `<button class="res" data-c="${e.c}" data-l="${l[0]}" style="--lane:${LANE_COLOR[e.lane]}">
+        <div class="rm">${e.m}/${e.d} ${esc(D.slots[e.slot])}${povName(e, primary()) ? ` · <b>${esc(povName(e, primary()))}</b>` : ''} · ${l[0]}${l[1] ? ' · ' + esc(spkName(l[1], primary())) : ''}</div>
+        <div class="rt">${rich(t)}</div></button>`).join('') : memoHits ? '' : '<div class="empty">결과 없음</div>');
+    box.querySelectorAll('.rt').forEach(el => markText(el, ql));
+    box.classList.add('open');
+    $('resClose').onclick = () => box.classList.remove('open');
+  }
+
+  /* ================= wiring ================= */
+  $('langs').innerHTML += LANG_ORDER.map(k => `<label data-lang="${k}"><input type="checkbox" value="${k}" ${state.langs.includes(k) ? 'checked' : ''} ${LANG_OK.includes(k) ? '' : 'disabled'} aria-label="${LANG_NAME[k]}"><span>${LANG_BTN[k]}</span></label>`).join('');
+  // mark the primary language (speaker names, search snippets and images follow it)
+  const syncLangChips = () => $('langs').querySelectorAll('label').forEach(l => {
+    const k = l.dataset.lang, p = k === primary();
+    l.classList.toggle('primary', p);
+    l.title = !LANG_OK.includes(k) ? `${LANG_NAME[k]} 없음${k === 'ko' ? ' — 게임에 한국어 패치를 설치한 뒤 rebuild.bat을 실행하세요' : ''}`
+      : `${LANG_NAME[k]}${p ? ' (대표 언어)' : state.langs.includes(k) ? ' (병기)' : ''}`;
+  });
+  syncLangChips();
+  $('langs').addEventListener('change', ev => {
+    const picked = LANG_ORDER.filter(k => $('langs').querySelector(`input[value="${k}"]`).checked);
+    if (!picked.length) { ev.target.checked = true; return; }   // at least one language
+    // keep the order the user ticked them in, so the first ticked stays primary
+    state.langs = state.langs.filter(k => picked.includes(k)).concat(picked.filter(k => !state.langs.includes(k)));
+    store.set('langs', state.langs);
+    syncLangChips();
+    if (state.view === 'timeline') buildTimeline();
+    if (dataBuilt) resetDataSections();
+    if (imgsBuilt) { if ($('dImgs').hidden) imgsBuilt = false; else renderImages(); }
+    if (state.open) renderReader();
+    if ($('results').classList.contains('open')) search($('q').value);
+  });
+  if (!ORDERS[state.order]) state.order = 'play';
+
+  $('tabTimeline').onclick = () => setView('timeline');
+  $('tabData').onclick = () => setView('data');
+  $('canvas').addEventListener('click', ev => { const n = ev.target.closest('.node'); if (n) openEpisode(+n.dataset.c); });
+  $('dList').addEventListener('click', ev => { const b = ev.target.closest('.did'); if (b) openEpisode(+b.dataset.c, b.dataset.l, 'script'); });
+  $('results').addEventListener('click', ev => {
+    const r = ev.target.closest('.res'); if (!r || !r.dataset.c) return;   // memo results handle themselves
+    $('results').classList.remove('open');
+    if (state.view === 'data') gotoData(r.dataset.l); else openEpisode(+r.dataset.c, r.dataset.l, 'script');
+  });
+  $('scrim').onclick = closeReader;
+  $('chPrev').onclick = () => jumpRel(tl.chapters, 'ci', -1);
+  $('chNext').onclick = () => jumpRel(tl.chapters, 'ci', 1);
+  $('moPrev').onclick = () => jumpRel(tl.months, 'mi', -1);
+  $('moNext').onclick = () => jumpRel(tl.months, 'mi', 1);
+  $('scroller').addEventListener('scroll', onScroll, { passive: true });
+  // mouse wheel always moves the timeline sideways (lanes are sized to fit the height)
+  $('scroller').addEventListener('wheel', ev => {
+    if (ev.ctrlKey) return;
+    const d = Math.abs(ev.deltaY) >= Math.abs(ev.deltaX) ? ev.deltaY : ev.deltaX;
+    if (!d) return;
+    ev.preventDefault();
+    $('scroller').scrollLeft += ev.deltaMode === 1 ? d * 40 : d;
+  }, { passive: false });
+  $('dStory').onchange = () => gotoData($('dStory').value);
+  $('dtLines').onclick = () => setDataTab('lines');
+  $('dtImgs').onclick = () => setDataTab('imgs');
+  $('iKind').onchange = renderImages;
+  $('dImgs').addEventListener('click', ev => {
+    const u = ev.target.closest('.iuse');
+    if (u) return openEpisode(+u.dataset.c, u.dataset.l, 'script');
+    const t = ev.target.closest('.ithumb'); if (!t) return;
+    if (t.dataset.kind === 'cg') showCg([t.dataset.key], false);
+    else if (t.dataset.kind === 'text') showImages([t.dataset.key], '', false);
+    else showJacket(t.dataset.key);
+  });
+  const onFilter = () => { dFilter.ch = $('fCh').value; dFilter.spk = $('fSpk').value; dFilter.type = $('fType').value; dFilter.ann = $('fAnn').checked; resetDataSections(); $('dList').scrollTop = 0; };
+  ['fCh', 'fSpk', 'fType', 'fAnn'].forEach(id => $(id).onchange = onFilter);
+  $('fReset').onclick = () => { dFilter.ch = dFilter.spk = dFilter.type = ''; $('fAnn').checked = false; buildFilterOptions(); onFilter(); };
+  $('dId').addEventListener('keydown', ev => { if (ev.key === 'Enter') { const v = $('dId').value.trim(); if (!gotoData(v)) $('dId').select(); } });
+  $('q').addEventListener('keydown', ev => { if (ev.key === 'Enter') search($('q').value); if (ev.key === 'Escape') $('results').classList.remove('open'); });
+  document.addEventListener('keydown', ev => {
+    if (ev.target.matches('input, select')) return;
+    if (ev.key === 'Escape') {
+      const lb = document.querySelector('.lightbox');
+      if (lb) lb.remove();
+      else if ($('results').classList.contains('open')) $('results').classList.remove('open');
+      else if ($('reader').classList.contains('full')) toggleFull();
+      else if (state.open) closeReader();
+    }
+    if (!state.open) return;
+    if (ev.key === 'ArrowRight') $('rNext')?.click();
+    if (ev.key === 'ArrowLeft') $('rPrev')?.click();
+    if (ev.key === 'f' || ev.key === 'F') toggleFull();
+  });
+  let rz = 0;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (state.view === 'timeline') buildTimeline(); }, 120); });
+
+  // shared with memo.js (notes / annotations / terms)
+  window.IFV = {
+    D, eps, byChrono, state, esc, rich, plain, name, spkName, povName, chTitle, primary,
+    TEXT_IDX, LANG_ORDER, LANG_TAG, LANG_NAME, LANE_COLOR, SPEAKER_COLOR,
+    openEpisode, renderReader: () => state.open && renderReader(), setDataTab,
+    refreshData: () => { if (dataBuilt) resetDataSections(); },
+    epLabel: e => `#${e.c} ${e.m}/${e.d} ${D.slots[e.slot]}${povName(e, 'ko') ? ' · ' + povName(e, 'ko') : ''}`,
+  };
+
+  buildTimeline();
+  const m = location.hash.match(/ep=(\d+)(?:&line=([\w-]+))?/);
+  if (m) openEpisode(+m[1], m[2]);
+})();
+</script>
+<script src="memo.js"></script>
+<!-- rights notice: shown on the first visit in this browser (works even before data.js exists) -->
+<style>
+.notice { position: fixed; inset: 0; z-index: 100; background: rgba(4, 9, 14, 0.82); display: grid; place-items: center; padding: 16px; }
+.notice-box { width: min(520px, 100%); background: #0f1b27; border: 1px solid var(--rule-strong); border-radius: 8px; padding: 22px 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); color: var(--text); }
+.notice-box h2 { margin: 0 0 12px; font-size: 16px; }
+.notice-box ul { margin: 0 0 12px; padding-left: 18px; line-height: 1.7; font-size: 13.5px; }
+.notice-box b { color: var(--accent); }
+.notice-box .en { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 0 0 16px; }
+.notice-box button { display: block; margin-left: auto; height: 32px; padding: 0 18px; border-radius: 4px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+</style>
+<script>
+(() => {
+  const KEY = 'ifv.notice';
+  try { if (localStorage.getItem(KEY) === '1') return; } catch {}
+  const el = document.createElement('div');
+  el.className = 'notice'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'noticeTitle');
+  el.innerHTML = `<div class="notice-box">
+    <h2 id="noticeTitle">안내</h2>
+    <ul>
+      <li><b>In Falsus의 대사·이름·이미지 등 모든 저작권은 lowiro에 있습니다.</b></li>
+      <li>이 뷰어는 비공식 팬 도구이며 lowiro와 관련이 없습니다.</li>
+      <li>화면의 내용은 내가 가진 게임 파일로 이 컴퓨터에서 만든 것입니다. 만들어진 파일(data.js, 이미지)은 다른 사람과 공유하지 마세요.</li>
+    </ul>
+    <p class="en">All rights to In Falsus, including its text, names and images, belong to lowiro.
+      This is an unofficial fan tool, not affiliated with lowiro.</p>
+    <button type="button">확인</button>
+  </div>`;
+  document.body.appendChild(el);
+  const ok = el.querySelector('button');
+  ok.onclick = () => { try { localStorage.setItem(KEY, '1'); } catch {} el.remove(); };
+  ok.focus();
+})();
+</script>
+</body>
+</html>
